@@ -1,0 +1,36 @@
+registry:
+  name: KWS Model Registry
+  identifier: kws_models
+  projectIdentifier: KWS_Research
+  orgIdentifier: default
+
+  spec:
+    type: Docker
+    url: oci://harness.local/kws-models
+
+    # Retention policy
+    cleanupPolicy:
+      - type: age
+        value: 90d
+      - type: count
+        value: 50
+
+    # Upstream proxies
+    upstreamProxies:
+      - registry: docker.io
+      - registry: ghcr.io
+
+  # Package types
+  packages:
+    - name: backbone-checkpoints
+      type: model
+      description: Trained backbone model weights (TFLite INT8)
+    - name: metric-learning-models
+      type: model
+      description: ProtoNet / Siamese / Triplet fine-tuned models
+    - name: experiment-metrics
+      type: data
+      description: JSON metrics, plots, confusion matrices
+    - name: datasets
+      type: data
+      description: Preprocessed datasets, splits, metadata

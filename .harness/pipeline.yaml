@@ -1,0 +1,172 @@
+pipeline:
+  name: KWS Research Experiment Pipeline
+  identifier: kws_experiment_pipeline
+  projectIdentifier: KWS_Research
+  orgIdentifier: default
+
+  stages:
+    - stage:
+        name: Data Preprocessing
+        identifier: data_preprocessing
+        type: CI
+        spec:
+          connectorRef: account.docker
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Install dependencies
+                  identifier: install_deps
+                  spec:
+                    shell: Sh
+                    command: |-
+                      pip install -r requirements.txt
+              - step:
+                  type: Run
+                  name: Preprocess GSCv2
+                  identifier: preprocess_gscv2
+                  spec:
+                    shell: Sh
+                    command: |-
+                      python src/scripts/preprocess.py \
+                        --dataset gscv2 \
+                        --config src/configs/preprocess.yaml
+
+    - stage:
+        name: Backbone Benchmark
+        identifier: backbone_benchmark
+        type: CI
+        spec:
+          connectorRef: account.docker
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Benchmark Backbones
+                  identifier: benchmark_backbones
+                  spec:
+                    shell: Sh
+                    command: |-
+                      python src/scripts/benchmark_backbone.py \
+                        --config src/configs/backbone.yaml \
+                        --artifacts /harness/artifacts
+
+    - stage:
+        name: Metric Learning
+        identifier: metric_learning
+        type: CI
+        spec:
+          connectorRef: account.docker
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Train ProtoNet
+                  identifier: train_protonet
+                  spec:
+                    shell: Sh
+                    command: |-
+                      python src/scripts/train_metric.py \
+                        --method prototypical \
+                        --config src/configs/metric_learning.yaml \
+                        --artifacts /harness/artifacts
+              - step:
+                  type: Run
+                  name: Evaluate
+                  identifier: evaluate
+                  spec:
+                    shell: Sh
+                    command: |-
+                      python src/scripts/evaluate.py \
+                        --config src/configs/evaluate.yaml \
+                        --artifacts /harness/artifacts
+
+    - stage:
+        name: Ablation Studies
+        identifier: ablation_studies
+        type: CI
+        spec:
+          connectorRef: account.docker
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Training Strategy Ablation
+                  identifier: training_ablation
+                  spec:
+                    shell: Sh
+                    command: |-
+                      python src/scripts/ablation.py \
+                        --type training_strategy \
+                        --config src/configs/ablation.yaml \
+                        --artifacts /harness/artifacts
+              - step:
+                  type: Run
+                  name: Augmentation Ablation
+                  identifier: augmentation_ablation
+                  spec:
+                    shell: Sh
+                    command: |-
+                      python src/scripts/ablation.py \
+                        --type augmentation \
+                        --config src/configs/ablation.yaml \
+                        --artifacts /harness/artifacts
+
+    - stage:
+        name: Analysis Reports
+        identifier: analysis_reports
+        type: CI
+        spec:
+          connectorRef: account.docker
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Generate Metrics Report
+                  identifier: metrics_report
+                  spec:
+                    shell: Sh
+                    command: |-
+                      python src/scripts/report.py \
+                        --artifacts /harness/artifacts \
+                        --output /harness/artifacts/report.json
+              - step:
+                  type: Run
+                  name: Upload Artifacts
+                  identifier: upload_artifacts
+                  spec:
+                    shell: Sh
+                    command: |-
+                      harness artifact upload \
+                        --registry kws-models \
+                        --file /harness/artifacts/report.json

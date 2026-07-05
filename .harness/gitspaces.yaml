@@ -1,0 +1,70 @@
+gitspaces:
+  name: KWS Research Dev Environment
+  identifier: kws_research_dev
+  projectIdentifier: KWS_Research
+  orgIdentifier: default
+
+  spec:
+    platform:
+      os: Linux
+      arch: Amd64
+    runtime:
+      type: Cloud
+      spec:
+        containerImage: python:3.11-slim
+
+    # Dev container configuration
+    devcontainer:
+      image: python:3.11-slim
+      postCreateCommand: |-
+        apt-get update && apt-get install -y \
+          ffmpeg \
+          libsndfile1 \
+          portaudio19-dev \
+          make \
+          git \
+        && pip install --upgrade pip \
+        && pip install -r requirements.txt
+
+      runArgs:
+        - --shm-size=2g
+        - --memory=8g
+        - --cpus=4
+
+    # IDE configuration
+    ide:
+      type: VSCode
+      spec:
+        extensions:
+          - ms-python.python
+          - ms-python.vscode-pylance
+          - ms-toolsai.jupyter
+          - github.copilot
+          - yzhang.markdown-all-in-one
+          - streetsidesoftware.code-spell-checker
+          - tamasfe.even-better-toml
+          - redhat.vscode-yaml
+
+    # Environment variables
+    envVariables:
+      PYTHONPATH: /harness/project/src:${PYTHONPATH}
+      KWS_CONFIG: /harness/project/src/configs
+      KWS_EXPERIMENTS: /harness/project/experiments
+      KWS_DATA: /harness/project/data
+      MLFLOW_TRACKING_URI: /harness/project/experiments/mlflow
+
+    # Port forwarding
+    ports:
+      - port: 8888
+        protocol: tcp
+        name: Jupyter
+      - port: 5000
+        protocol: tcp
+        name: MLflow UI
+
+    # Lifecycle hooks
+    lifecycle:
+      onStart:
+        - command: make setup
+      onStop:
+        - command: make clean
