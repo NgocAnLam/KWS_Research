@@ -7,7 +7,7 @@
 | **Evidence** | `evidence/backbone_models.md` |
 | **Decision** | `decisions_log.md` #7 |
 | **Experiment** | (SLR — confirmed by EdgeSpot 2026) |
-| **Status** | **Verified** (SLR — consistent across multiple papers) |
+| **Status** | **Literature-supported** |
 
 ## Supporting Evidence
 

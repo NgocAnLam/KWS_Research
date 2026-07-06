@@ -10,7 +10,7 @@
 | **Experiment** | (SLR — no experiment needed) |
 | **Figures** | — |
 | **Citations** | Parnami 2022, Kim 2022, Rusci 2023, EdgeSpot 2026, GE2E-KWS 2024 |
-| **Status** | **Verified** (SLR) |
+| **Status** | **Literature-supported** |
 
 ## Supporting Evidence
 

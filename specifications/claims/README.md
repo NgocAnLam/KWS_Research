@@ -21,6 +21,21 @@
 | **Status** | Unverified / Verified / Rejected |
 ```
 
+## Claim Lifecycle
+
+Mỗi claim trải qua các giai đoạn:
+
+```text
+Hypothesis ──→ Literature-supported ──→ Experiment-supported ──→ Published
+```
+
+| Trạng thái | Ý nghĩa |
+|---|---|
+| **Hypothesis** | Giả thuyết, chưa có evidence |
+| **Literature-supported** | Có evidence từ literature (SLR) |
+| **Experiment-supported** | Đã được thực nghiệm kiểm chứng |
+| **Published** | Đã xuất hiện trong thesis/paper |
+
 ## Quy tắc
 
 1. Mỗi claim phải có evidence từ literature hoặc experiment.
@@ -31,11 +46,11 @@
 
 | ID | Claim | Status |
 |---|---|---|
-| C01 | Vietnamese UDKWS lacks a unified evaluation protocol | Verified (SLR) |
-| C02 | BC-ResNet-32 offers the best accuracy/size trade-off for edge KWS | Verified (SLR) |
-| C03 | Log-Mel is the standard feature for KWS in 2024-2026 literature | Verified (SLR) |
-| C04 | There is no existing Vietnamese KWS dataset or research framework | Verified (SLR) |
-| C05 | Prototypical Networks provide competitive few-shot performance for audio-enrolled UDKWS | Pending (EXP001) |
-| C06 | PCEN improves noise robustness at zero inference cost | Pending (EXP001) |
-| C07 | Our evaluation protocol enables fair comparison across methods | Pending (after EXP001-003) |
-| C08 | The proposed framework achieves real-time streaming on Raspberry Pi 4 | Pending (EXP003) |
+| C01 | Vietnamese UDKWS lacks a unified evaluation protocol | **Literature-supported** |
+| C02 | BC-ResNet-32 offers the best accuracy/size trade-off for edge KWS | **Literature-supported** |
+| C03 | Log-Mel is the standard feature for KWS in 2024-2026 literature | **Literature-supported** |
+| C04 | There is no existing Vietnamese KWS dataset or research framework | **Literature-supported** |
+| C05 | Prototypical Networks provide competitive few-shot performance for audio-enrolled UDKWS | Hypothesis (EXP001 pending) |
+| C06 | PCEN improves noise robustness at zero inference cost | Hypothesis (EXP001 pending) |
+| C07 | Our evaluation protocol enables fair comparison across methods | Hypothesis (after EXP001-003) |
+| C08 | The proposed framework achieves real-time streaming on Raspberry Pi 4 | Hypothesis (EXP003 pending) |
