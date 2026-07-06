@@ -100,7 +100,7 @@ def snapshot_environment(output_dir: Path):
         "cudnn_version": torch.backends.cudnn.version() if torch.cuda.is_available() else "N/A",
         "gpu_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
         "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "N/A",
-        "gpu_vram_gb": torch.cuda.get_device_properties(0).total_mem / 1e9
+        "gpu_vram_gb": torch.cuda.get_device_properties(0).total_memory / 1e9
             if torch.cuda.is_available() else 0,
         "numpy": np.__version__,
     }
