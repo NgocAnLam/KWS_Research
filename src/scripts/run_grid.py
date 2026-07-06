@@ -1,16 +1,17 @@
 """
-Grid runner for EXP001: 2×3 factorial design.
+Grid runner for EXP001: 2×3 factorial design per research-design-v2.0.
+
+Cell counts:
+  ProtoNet (primary, 3 seeds):   2 features × 3 seeds = 6
+  GE2E    (secondary, 1 seed):   2 features × 1 seed  = 2
+  Triplet (secondary, 1 seed):   2 features × 1 seed  = 2
+  Total:                                               10
 
 Modes:
-  --smoke    6 runs (2 features × 3 losses × 1 seed, mini epochs)
-  --full     18 runs (2 features × 3 losses × 3 seeds)
-  --dry-run  Print plan without executing
+  --dry-run  Preview all 10 cells
+  --smoke    10 cells × mini epochs (validate pipeline)
+  --full     Production: 6 ProtoNet + 2 GE2E + 2 Triplet
   --resume   Skip cells with existing results
-
-Workflow:
-  python src/scripts/run_grid.py --dry-run   # preview
-  python src/scripts/run_grid.py --smoke     # 6 cells validation
-  python src/scripts/run_grid.py --full      # 18 cells — production
 """
 
 import argparse
@@ -58,19 +59,19 @@ def main():
     if args.dry_run:
         mode = "dry_run"
 
-    cells = get_cells(full=(mode == "full"))
+    # dry-run always shows all cells; --full enables 3 seeds cell; --smoke still 1-seed mini
+    cells = get_cells(full=(mode != "smoke"))
     total = len(cells)
 
-    label = {"full": "FULL (18 cells)", "smoke": "SMOKE (6 cells)", "dry_run": "DRY RUN"}[mode]
+    label = {"full": "FULL (10 cells)", "smoke": "SMOKE (10 cells × mini)", "dry_run": "DRY RUN (10 cells)"}[mode]
 
     print(f"{'='*60}")
     print(f"EXP001 Grid — {label}")
     print(f"{'='*60}")
     if mode == "full":
-        print(f"  Primary   (3 seeds): {len(FEATURES)} feats × {len(PRIMARY_LOSSES)} losses × 3 = {len(FEATURES) * len(PRIMARY_LOSSES) * 3}")
-        print(f"  Secondary (1 seed):  {len(FEATURES)} feats × {len(set(LOSSES)-set(PRIMARY_LOSSES))} losses × 1 = {len(FEATURES) * (len(LOSSES)-len(PRIMARY_LOSSES))}")
-    elif mode == "smoke":
-        print(f"  All cells: 1 seed each = {total} cells (mini epochs)")
+        print(f"  ProtoNet (primary, 3 seeds):  {len(FEATURES)} feats × 3 seeds = {len(FEATURES) * 3}")
+        print(f"  GE2E     (secondary, 1 seed):  {len(FEATURES)} feats × 1 seed  = {len(FEATURES)}")
+        print(f"  Triplet  (secondary, 1 seed):  {len(FEATURES)} feats × 1 seed  = {len(FEATURES)}")
     print(f"  Total: {total} cells")
     print(f"{'='*60}\n")
 
