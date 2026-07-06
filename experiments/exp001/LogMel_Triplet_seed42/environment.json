@@ -1,0 +1,12 @@
+{
+  "python": "3.12.3 (main, Mar 23 2026, 19:04:32) [GCC 13.3.0]",
+  "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+  "torch": "2.12.1+cpu",
+  "cuda_available": false,
+  "cuda_version": "N/A",
+  "cudnn_version": "N/A",
+  "gpu_count": 0,
+  "gpu_name": "N/A",
+  "gpu_vram_gb": 0,
+  "numpy": "2.5.1"
+}

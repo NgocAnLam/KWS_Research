@@ -56,13 +56,13 @@ class BCResBlock(nn.Module):
 class BCResNet32(nn.Module):
     """BC-ResNet-32 backbone.
 
-    Width multiplier t controls channel width (t=1.0 → ~25K, t=2.0 → ~110K).
-    Default t=2.0 matches BC-ResNet-32 capacity per original paper.
+    Width multiplier t controls channel width (t=1.0 → ~25K, t=2.5 → ~111K).
+    Default t=2.5 matches BC-ResNet-32 capacity per original paper (~111K params).
 
     Args:
         input_channels: Number of input feature channels (default: 40)
         embedding_dim: Output embedding dimension (default: 64)
-        t: Channel width multiplier (default: 2.0)
+        t: Channel width multiplier (default: 2.5)
     """
 
     def __init__(self, input_channels=40, embedding_dim=64, t=2.5):
@@ -72,13 +72,6 @@ class BCResNet32(nn.Module):
         self.conv1 = nn.Sequential(
             nn.Conv2d(1, c(16), kernel_size=(5, 5), stride=(2, 1), padding=(2, 2)),
             nn.BatchNorm2d(c(16)),
-            nn.ReLU(inplace=True),
-        )
-
-        # Initial conv
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(1, 16, kernel_size=(5, 5), stride=(2, 1), padding=(2, 2)),
-            nn.BatchNorm2d(16),
             nn.ReLU(inplace=True),
         )
 
@@ -115,7 +108,7 @@ class BCResNet32(nn.Module):
             nn.ReLU(inplace=True),
             nn.AdaptiveAvgPool2d((1, 1)),
             nn.Flatten(),
-            nn.Linear(64, embedding_dim),
+            nn.Linear(c(64), embedding_dim),
         )
 
         self._initialize_weights()

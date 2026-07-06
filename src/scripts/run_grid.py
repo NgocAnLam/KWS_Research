@@ -83,7 +83,7 @@ def main():
     for i, (feature, loss, seed) in enumerate(cells, 1):
         out_dir = config_dir(feature, loss, seed)
 
-        if args.resume and Path(out_dir / "metrics.json").exists():
+        if args.resume and (Path(out_dir) / "metrics.json").exists():
             skipped += 1
             print(f"  [{i}/{total}] SKIP {out_dir}")
             continue
