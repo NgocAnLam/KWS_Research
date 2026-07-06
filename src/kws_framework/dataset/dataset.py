@@ -52,9 +52,9 @@ class GSCv2Dataset:
     def __init__(self, data_root: str, split: str = "training"):
         self.data_root = Path(data_root)
         self.split = split
-        self.classes = sorted(os.listdir(data_root))
+        self.classes = sorted(os.listdir(self.data_root))
         self.classes = [c for c in self.classes
-                        if os.path.isdir(data_root / c) and not c.startswith("_")]
+                        if os.path.isdir(self.data_root / c) and not c.startswith("_")]
 
         self._load_file_lists()
         self._build_index()
@@ -153,14 +153,6 @@ class EpisodeSampler:
 
     def sample_episode(self, classes: List[str]) -> Tuple[np.ndarray, np.ndarray,
                                                            np.ndarray, np.ndarray]:
-        """Sample an episode: support and query sets.
-
-        Returns:
-            support_data: (N_way * n_support,) numpy array of audio
-            support_labels: (N_way * n_support,) numpy array of labels
-            query_data: (N_way * n_query,) numpy array of audio
-            query_labels: (N_way * n_query,) numpy array of labels
-        """
         chosen_classes = self.rng.sample(classes, min(self.n_way, len(classes)))
 
         support_data, support_labels = [], []
@@ -168,7 +160,6 @@ class EpisodeSampler:
 
         for label_idx, cls in enumerate(chosen_classes):
             files = self.dataset.get_files_by_class(cls)
-            # Group by speaker for speaker-dependent sampling
             speaker_groups = {}
             for f in files:
                 spk = f[2]
@@ -176,14 +167,17 @@ class EpisodeSampler:
                     speaker_groups[spk] = []
                 speaker_groups[spk].append(f)
 
-            # Pick a random speaker
-            speaker = self.rng.choice(list(speaker_groups.keys()))
-            speaker_files = speaker_groups[speaker]
+            # Filter speakers with enough utterances
+            valid_speakers = {s: sf for s, sf in speaker_groups.items()
+                              if len(sf) >= self.n_support + self.n_query}
 
-            if len(speaker_files) < self.n_support + self.n_query:
+            if not valid_speakers:
                 continue
 
+            speaker = self.rng.choice(list(valid_speakers.keys()))
+            speaker_files = valid_speakers[speaker]
             self.rng.shuffle(speaker_files)
+
             support_files = speaker_files[:self.n_support]
             query_files = speaker_files[self.n_support:self.n_support + self.n_query]
 
@@ -191,11 +185,14 @@ class EpisodeSampler:
                 audio = self.dataset.load_audio(f[1])
                 support_data.append(audio)
                 support_labels.append(label_idx)
-
             for f in query_files:
                 audio = self.dataset.load_audio(f[1])
                 query_data.append(audio)
                 query_labels.append(label_idx)
+
+        assert len(support_data) > 0, \
+            f"No valid episodes: need speakers with >= {self.n_support + self.n_query} utterances"
+        assert len(query_data) > 0, "No query data generated"
 
         support_data = np.stack(support_data)
         support_labels = np.array(support_labels)
