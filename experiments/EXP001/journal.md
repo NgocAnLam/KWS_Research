@@ -1,7 +1,12 @@
 # EXP001 Experiment Journal
 
 > **Purpose:** Log every run, error, fix, and observation during experimentation.
-> This is a living document — not a polished report.
+> **Rules:**
+> - Do not change learning rate, epochs, or backbone mid-grid
+> - Do not drop seeds based on results
+> - Any config change = EXP001b, not EXP001
+> - Negative results are valid results
+> - Tag `exp001-complete` when done
 
 ---
 

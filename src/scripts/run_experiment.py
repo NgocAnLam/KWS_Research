@@ -18,10 +18,6 @@ import sys
 import random
 import subprocess
 import hashlib
-import time
-import platform
-from datetime import datetime
-from pathlib import Path
 
 import torch
 import torch.backends.cudnn as cudnn
@@ -110,9 +106,20 @@ def snapshot_environment(output_dir: Path):
 
 def audit_dataset(data_root: str, split: str) -> dict:
     ds = GSCv2Dataset(data_root, split=split)
+    # Dataset checksum: SHA256 of dataset root README + README files
+    # (stable identifier for the dataset version)
+    dataset_hash = hashlib.sha256()
+    try:
+        readme = os.path.join(data_root, "README.md")
+        if os.path.exists(readme):
+            with open(readme, "rb") as f:
+                dataset_hash.update(f.read())
+    except Exception:
+        pass
     info = {
         "split": split,
         "total_files": len(ds),
+        "dataset_checksum": dataset_hash.hexdigest()[:16],
         "classes_found": ds.classes,
         "seen_classes": ds.seen_classes,
         "unseen_classes": ds.unseen_classes,

@@ -57,7 +57,8 @@ ProtoNet is the primary metric-learning approach investigated in this study. The
 
 | Parameter | Value |
 |---|---|
-| Dataset | GSCv2 (84,843 train / 11,005 test) |
+| Dataset | GSCv2 (84,843 train / 11,005 test), checksum verified |
+| Primary metric | **Acc@1%FAR** (Acc@5%FAR secondary, Accuracy tertiary) |
 | Backbone | BC-ResNet-32 (111K params) |
 | Embedding dim | 64 |
 | Episode | 5-way, 5-shot, 5-query |
@@ -66,7 +67,7 @@ ProtoNet is the primary metric-learning approach investigated in this study. The
 | Epochs | 40 |
 | Optimizer | Adam (lr=1e-3, wd=4e-5) |
 | Scheduler | Cosine annealing |
-| Seed verification | ✅ Deterministic |
+| Seed verification | ✅ Deterministic
 
 ---
 
