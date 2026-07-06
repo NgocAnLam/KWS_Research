@@ -72,15 +72,18 @@
 
 | Category | Total | Read | In Progress |
 |---|---|---|---|
-| Few-shot KWS Methods | 10 | 10 | 0 |
-| Feature Engineering | 2 | 2 | 0 |
-| Lightweight Backbones | 3 | 3 | 0 |
-| Training Strategies | 3 | 3 | 0 |
-| Evaluation Protocols | 1 | 1 | 0 |
-| Edge Deployment | 4 | 4 | 0 |
-| Vietnamese Speech | 0 | 0 | 1 |
-| Open-set / Unknown | 4 | 4 | 0 |
-| **Total** | **27** | **19** | **8** |
+| Few-shot KWS Methods | 15 | 15 | 0 |
+| Feature Engineering | 3 | 3 | 0 |
+| Lightweight Backbones | 6 | 6 | 0 |
+| Training Strategies | 5 | 5 | 0 |
+| Evaluation Protocols | 2 | 2 | 0 |
+| Edge Deployment | 6 | 6 | 0 |
+| Vietnamese Speech | 1 | 1 | 0 |
+| Open-set / Unknown | 5 | 5 | 0 |
+| Foundational Papers | 7 | 7 | 0 |
+| **Total** | **50** | **50** | **0** |
+
+SLR complete: 50 papers across all categories. Ready for evidence update + summary_project.md freeze.
 
 ---
 
