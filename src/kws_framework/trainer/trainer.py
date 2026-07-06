@@ -17,7 +17,7 @@ from typing import Dict, Any, Optional
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
+from kws_framework.losses.losses import PrototypicalLoss
 
 
 class Trainer:
@@ -68,8 +68,14 @@ class Trainer:
             query_emb = self.model(query_feat)
 
             # Loss
-            loss = self.loss_fn(support_emb, support_labels,
-                                query_emb, query_labels)
+            if isinstance(self.loss_fn, PrototypicalLoss):
+                loss = self.loss_fn(support_emb, support_labels,
+                                    query_emb, query_labels)
+            else:
+                # GE2E / Triplet: concatenate support + query, pass all
+                all_emb = torch.cat([support_emb, query_emb], dim=0)
+                all_labels = torch.cat([support_labels, query_labels], dim=0)
+                loss = self.loss_fn(all_emb, all_labels)
 
             self.optimizer.zero_grad()
             loss.backward()

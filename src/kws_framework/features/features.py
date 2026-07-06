@@ -43,7 +43,12 @@ class MelSpectrogram(nn.Module):
         self.eps = 1e-6
 
     def forward(self, waveform: torch.Tensor) -> torch.Tensor:
-        spec = self.mel_spec(waveform)
+        # waveform: (B, T) or (T,)
+        if waveform.dim() == 1:
+            waveform = waveform.unsqueeze(0)  # (1, T)
+        spec = self.mel_spec(waveform)  # (B, n_mels, T)
+        # Add channel dimension for Conv2d
+        spec = spec.unsqueeze(1)  # (B, 1, n_mels, T)
         log_spec = torch.log(spec + self.eps)
         return log_spec
 
@@ -76,8 +81,10 @@ class PCEN(nn.Module):
         self.delta = nn.Parameter(torch.tensor(delta))
         self.r = nn.Parameter(torch.tensor(r))
 
-    def forward(self, mel_energy: torch.Tensor) -> torch.Tensor:
-        B, C, T = mel_energy.shape
+    def forward(self, mel_4d: torch.Tensor) -> torch.Tensor:
+        # Input: (B, 1, F, T) from MelSpectrogram
+        B, _, C, T = mel_4d.shape
+        mel_energy = mel_4d.view(B, C, T)  # (B, F, T)
         device = mel_energy.device
 
         s = torch.sigmoid(self.s)
@@ -118,7 +125,8 @@ class FeatureExtractor(nn.Module):
             raise ValueError(f"Unknown feature type: {feature_type}")
 
     def forward(self, waveform: torch.Tensor) -> torch.Tensor:
-        mel_energy = self.mel(waveform)
+        mel_spec = self.mel(waveform)  # (B, 1, F, T)
         if self.pcen is not None:
-            return self.pcen(mel_energy)
-        return mel_energy
+            pcen_out = self.pcen(mel_spec)  # (B, F, T)
+            return pcen_out.unsqueeze(1)   # (B, 1, F, T)
+        return mel_spec  # (B, 1, F, T)

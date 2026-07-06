@@ -275,8 +275,9 @@ def main(config: dict, smoke: bool = False):
         train_dataset := GSCv2Dataset(data_root, split="training"),
         n_way=n_way, n_support=n_support, n_query=n_query, seed=seed
     )
+    # Eval uses training split too — unseen classes (not files) are the held-out aspect
     eval_sampler = EpisodeSampler(
-        GSCv2Dataset(data_root, split="testing"),
+        GSCv2Dataset(data_root, split="training"),
         n_way=n_way, n_support=n_support, n_query=n_query, seed=seed + 1000
     )
 
@@ -289,8 +290,8 @@ def main(config: dict, smoke: bool = False):
         for _ in range(n_episodes_train):
             support_data, support_labels, query_data, query_labels = \
                 train_sampler.sample_episode(train_dataset.unseen_classes)
-            sd = torch.FloatTensor(support_data).unsqueeze(1)
-            qd = torch.FloatTensor(query_data).unsqueeze(1)
+            sd = torch.FloatTensor(support_data)
+            qd = torch.FloatTensor(query_data)
             sl = torch.LongTensor(support_labels)
             ql = torch.LongTensor(query_labels)
             loss = trainer.train_epoch([(sd, sl, qd, ql)])
@@ -314,7 +315,7 @@ def main(config: dict, smoke: bool = False):
 
     # Latency
     sample_data, _, _, _ = eval_sampler.sample_episode(train_dataset.unseen_classes)
-    dummy = torch.FloatTensor(sample_data[:1]).unsqueeze(1)
+    dummy = torch.FloatTensor(sample_data[:1])
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dummy = dummy.to(device)
     if torch.cuda.is_available():

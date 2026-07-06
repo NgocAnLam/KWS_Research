@@ -4,7 +4,8 @@ GSCv2 Dataset Loader and Episode Sampler for Few-shot KWS.
 Design decisions (v2.0):
 - Split: 25 seen / 5 unseen / 5 threshold (+ _background_noise_)
 - Episode: 5-way, K-shot (K=1,3,5)
-- Speaker-dependent: support and query from same speaker, different utterances
+- Support: speaker-dependent (same speaker)
+- Query: cross-speaker (any speaker in class)
 """
 
 import os
@@ -29,25 +30,19 @@ THRESHOLD_CLASSES = ["backward", "forward", "visual", "follow", "learn"]
 
 
 def _speaker_id_from_filename(filename: str) -> str:
-    """Extract speaker ID from filename like '3cfc6b3a_nohash_2.wav'"""
     basename = os.path.basename(filename)
     match = re.match(r"([^_]+)_nohash", basename)
     return match.group(1) if match else basename
 
 
 def _utterance_id_from_filename(filename: str) -> int:
-    """Extract utterance index from filename like '3cfc6b3a_nohash_2.wav'"""
     basename = os.path.basename(filename)
     match = re.search(r"_nohash_(\d+)", basename)
     return int(match.group(1)) if match else 0
 
 
 class GSCv2Dataset:
-    """Google Speech Commands v2 dataset loader.
-
-    Splits classes into seen/unseen/threshold per research-design-v2.0.
-    Uses official validation_list.txt and testing_list.txt for partition.
-    """
+    """Google Speech Commands v2 dataset loader."""
 
     def __init__(self, data_root: str, split: str = "training"):
         self.data_root = Path(data_root)
@@ -55,34 +50,23 @@ class GSCv2Dataset:
         self.classes = sorted(os.listdir(self.data_root))
         self.classes = [c for c in self.classes
                         if os.path.isdir(self.data_root / c) and not c.startswith("_")]
-
         self._load_file_lists()
         self._build_index()
 
     def _load_file_lists(self):
         val_path = self.data_root / "validation_list.txt"
         test_path = self.data_root / "testing_list.txt"
-
-        val_files = set()
-        test_files = set()
-
-        if val_path.exists():
-            val_files = set(line.strip() for line in open(val_path))
-        if test_path.exists():
-            test_files = set(line.strip() for line in open(test_path))
-
+        val_files = set(line.strip() for line in open(val_path)) if val_path.exists() else set()
+        test_files = set(line.strip() for line in open(test_path)) if test_path.exists() else set()
         all_files = []
         for cls in self.classes:
             cls_dir = self.data_root / cls
             if cls_dir.is_dir():
                 for f in os.listdir(cls_dir):
                     if f.endswith(".wav"):
-                        rel_path = f"{cls}/{f}"
-                        all_files.append(rel_path)
-
+                        all_files.append(f"{cls}/{f}")
         if self.split == "training":
-            self.files = [f for f in all_files
-                         if f not in val_files and f not in test_files]
+            self.files = [f for f in all_files if f not in val_files and f not in test_files]
         elif self.split == "validation":
             self.files = [f for f in all_files if f in val_files]
         elif self.split == "testing":
@@ -91,7 +75,7 @@ class GSCv2Dataset:
             raise ValueError(f"Unknown split: {self.split}")
 
     def _build_index(self):
-        self.index = []  # (class_name, filepath, speaker_id, utterance_idx)
+        self.index = []
         for rel_path in self.files:
             cls = rel_path.split("/")[0]
             full_path = self.data_root / rel_path
@@ -126,7 +110,6 @@ class GSCv2Dataset:
     def load_audio(self, filepath: str) -> np.ndarray:
         audio, sr = sf.read(filepath)
         assert sr == 16000, f"Expected 16kHz, got {sr}"
-        # Trim/pad to 1 second (16000 samples)
         if len(audio) > 16000:
             audio = audio[:16000]
         elif len(audio) < 16000:
@@ -137,9 +120,10 @@ class GSCv2Dataset:
 class EpisodeSampler:
     """Episode sampler for few-shot evaluation.
 
-    - N-way: number of classes per episode (default: 5)
-    - K-shot: number of support samples per class (default: 1, 3, 5)
-    - Speaker-dependent: support and query from same speaker, different utterances
+    - N-way: number of classes per episode
+    - K-shot: number of support samples per class
+    - Support: speaker-dependent (same speaker for all support samples)
+    - Query: cross-speaker (any speaker in the class, excluding support utterances)
     """
 
     def __init__(self, dataset: GSCv2Dataset, n_way: int = 5,
@@ -153,7 +137,9 @@ class EpisodeSampler:
 
     def sample_episode(self, classes: List[str]) -> Tuple[np.ndarray, np.ndarray,
                                                            np.ndarray, np.ndarray]:
-        chosen_classes = self.rng.sample(classes, min(self.n_way, len(classes)))
+        if len(classes) < self.n_way:
+            raise ValueError(f"Not enough classes: need {self.n_way}, got {len(classes)}")
+        chosen_classes = self.rng.sample(classes, self.n_way)
 
         support_data, support_labels = [], []
         query_data, query_labels = [], []
@@ -167,19 +153,23 @@ class EpisodeSampler:
                     speaker_groups[spk] = []
                 speaker_groups[spk].append(f)
 
-            # Filter speakers with enough utterances
-            valid_speakers = {s: sf for s, sf in speaker_groups.items()
-                              if len(sf) >= self.n_support + self.n_query}
-
-            if not valid_speakers:
+            valid_support = {s: sf for s, sf in speaker_groups.items()
+                             if len(sf) >= self.n_support}
+            if not valid_support:
                 continue
 
-            speaker = self.rng.choice(list(valid_speakers.keys()))
-            speaker_files = valid_speakers[speaker]
+            speaker = self.rng.choice(list(valid_support.keys()))
+            speaker_files = valid_support[speaker]
             self.rng.shuffle(speaker_files)
-
             support_files = speaker_files[:self.n_support]
-            query_files = speaker_files[self.n_support:self.n_support + self.n_query]
+
+            all_files = files[:]
+            self.rng.shuffle(all_files)
+            used = {f[1] for f in support_files}
+            query_files = [f for f in all_files if f[1] not in used][:self.n_query]
+
+            if len(query_files) < self.n_query:
+                continue
 
             for f in support_files:
                 audio = self.dataset.load_audio(f[1])
@@ -190,13 +180,11 @@ class EpisodeSampler:
                 query_data.append(audio)
                 query_labels.append(label_idx)
 
-        assert len(support_data) > 0, \
-            f"No valid episodes: need speakers with >= {self.n_support + self.n_query} utterances"
+        assert len(support_data) > 0, (
+            f"No valid episodes. n_support={self.n_support}, "
+            f"n_query={self.n_query}, classes={classes}"
+        )
         assert len(query_data) > 0, "No query data generated"
 
-        support_data = np.stack(support_data)
-        support_labels = np.array(support_labels)
-        query_data = np.stack(query_data)
-        query_labels = np.array(query_labels)
-
-        return support_data, support_labels, query_data, query_labels
+        return (np.stack(support_data), np.array(support_labels),
+                np.stack(query_data), np.array(query_labels))
