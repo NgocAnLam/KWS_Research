@@ -4,6 +4,70 @@
 
 ---
 
+## Deep Analysis: User-defined Keyword Spotting (UDKWS) 2024-2026
+
+> Generated 2026-07-06 from survey of ~160 papers (92 arXiv + 68 non-arXiv).
+> See `kws_papers_2024_2026_non_arxiv.md` for full paper list.
+
+### 1. Community Trends
+
+**Hot (ascending 2024→2026):**
+- **Audio-text joint embedding for zero-shot enrollment** — Dominant paradigm shift. Type keyword → detect. (Custom wake word via audio-text INTERSPEECH 2024, Adaptive instance norm ICASSP 2024, Text-aware adapter ICASSP 2025, Parallel-attention IEEE SPL 2024, SynaSpot ICASSP 2026, No Word Left Behind ICASSP 2026)
+- **CTC-based streaming open-vocabulary KWS** — W-CTC (INTERSPEECH 2025), NTC-KWS (ICASSP 2025), Dual data scaling (ICASSP 2026), MFA-KWS Transducer (TASLP 2025)
+- **SSL pretraining + KD to lightweight** — EdgeSpot (ICASSP 2026), MT-HuBERT (ICASSP 2026), Lightweight zero-shot KD (APSIPA 2025)
+- **Phoneme-level/multi-granular** — PLCL (ICASSP 2025), ProKWS (ICASSP 2026)
+- **Continual/incremental adaptation** — FILL (INTERSPEECH 2024), Dual-stage matching + continual adaptation (TASLP 2026)
+
+**Declining:**
+- **Prototypical Networks** — Only 1 minor paper out of 160+ (C. Chen 2024, non-top venue)
+- **Triplet loss** — Replaced by GE2E (60.7% AUC improvement, Zhu 2024)
+- **DS-CNN** — Baseline only; BC-ResNet and Conformers dominate
+- **MFCC** — Log-Mel (40-80 dim) is minimum; PCEN/learnable frontends growing
+- **Enrollment workflow** — Declining; zero-shot text-based enrollment dominates
+
+### 2. Project Risk Assessment
+
+**Overall score: 5/10** (methods alone), **7/10** (including framework + Vietnamese gap)
+
+| Risk | Score | Analysis |
+|------|-------|----------|
+| ProtoNet as primary | 3/10 | Nearly no 2024-2026 papers; GE2E/ArcFace/TCLP dominant |
+| BC-ResNet backbone | 7/10 | Still used in EdgeSpot (ICASSP 2026); Conformer growing |
+| MFCC feature | 2/10 | Historical baseline only in 2024-2026 |
+| Log-Mel feature | 8/10 | Still the standard |
+| Enrollment workflow | 4/10 | Strong trend to zero-shot text-based |
+| Vietnamese gap | 9/10 | Zero existing Vietnamese KWS papers — genuine gap |
+| Edge deployment | 8/10 | Still relevant (EdgeSpot 2026, GE2E 2024) |
+
+**Required changes to raise to 7-8/10:**
+1. Add PCEN as third feature type (zero inference cost)
+2. Add GE2E loss as third metric learning method (directly addresses ProtoNet concern)
+3. Add zero-shot text enrollment ablation (Sentence-BERT → projection → compare with audio enrollment)
+4. Cross-dataset eval using MSWC Vietnamese subset
+5. FAR-constrained metrics (acc@1% FAR, acc@5% FAR)
+6. Temporal SDPA on backbone (EdgeSpot-style)
+
+### 3. Must-Cite Papers
+
+| Paper | Venue | Year | Relevance |
+|-------|-------|------|-----------|
+| GE2E-KWS (Zhu et al.) | SLT | 2024 | GE2E loss, evaluation protocol, 419KB quantized |
+| EdgeSpot (Buyuksolak et al.) | ICASSP | 2026 | BC-ResNet+PCEN+KD, most similar approach |
+| TCLP-KWS (Li et al.) | TASLP | 2025 | Triplet contrastive for customizable KWS |
+| Text-aware adapter (Jung et al.) | ICASSP | 2025 | Text conditioning for few-shot |
+| Contrastive customizable KWS (Xi et al.) | ICASSP | 2024 | User-defined KWS in continuous speech |
+| Open-vocab adaptive instance norm (Navon et al.) | ICASSP | 2024 | Text encoder conditions audio |
+| PLCL (Li et al.) | ICASSP | 2025 | Phoneme-level contrastive, flexible enrollment |
+| TACos (Wilkinghoff et al.) | ICASSP | 2024 | Temporal embeddings + DTW for FS-KWS |
+| Parallel-attention (Kim et al.) | IEEE SPL | 2024 | Audio-text bridging |
+| Dual-stage matching + continual (Ai et al.) | TASLP | 2026 | Most comprehensive UDKWS framework |
+| SSL + meta-learning (Kao et al.) | SLT | 2022 | HuBERT + meta-learning foundational |
+| Few-shot open-set on-device (Rusci et al.) | INTERSPEECH | 2023 | Open-set, triplet > ProtoNet |
+
+---
+
+---
+
 ## Thống kê
 
 | Category | Total | Read | In Progress |

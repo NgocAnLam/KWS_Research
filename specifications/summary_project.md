@@ -123,6 +123,8 @@ Người dùng có thể tự định nghĩa các keyword mới (không giới h
 
 Few-shot Metric Learning được sử dụng như phương pháp giải quyết bài toán này.
 
+> **SLR finding (2026-07-06):** The community strongly shifted toward zero-shot audio-text embedding methods in 2024-2026. Prototypical Networks appear in only 1 of 160+ surveyed papers. GE2E loss (Zhu 2024, SLT) and Sub-center ArcFace (EdgeSpot 2026, ICASSP) are now dominant metric learning approaches. **Recommendation:** Add GE2E loss as a third metric learning method; add PCEN as a third feature type; add a text-enrollment ablation.
+
 Điều này giúp phân biệt rõ:
 
 - **Problem:** User-defined Keyword Spotting.
@@ -397,13 +399,13 @@ Tất cả negative samples được collect từ cùng môi trường thu (cùn
 ## 10.1. Primary Benchmark (Feature Extraction × Metric Learning factorial design)
 
 | Feature | Parameters |
-|---|---|
+|---|---|---|
 | MFCC | n_mfcc=13, n_fft=512, hop_length=160, win_length=400, fmin=0, fmax=8000 |
 | Log-Mel Spectrogram | n_mels=40, n_fft=512, hop_length=160, win_length=400, fmin=0, fmax=8000 |
 
 ## 10.2. Extension / Ablation (sau benchmark chính)
 
-- **PCEN (Per-Channel Energy Normalization)**: Có thể cải thiện robustness trong môi trường noisy, phù hợp với edge deployment. Chỉ benchmark trên configuration tốt nhất từ factorial experiment, không đưa vào benchmark chính.
+- **PCEN (Per-Channel Energy Normalization)**: Có thể cải thiện robustness trong môi trường noisy, phù hợp với edge deployment. <!-- SLR 2026-07-06: PCEN is validated by EdgeSpot (ICASSP 2026) as zero-cost improvement. Should be promoted to primary benchmark alongside Log-Mel, replacing MFCC. -->
 - Mel Spectrogram (không log)
 
 ## 10.3. Tiền xử lý
@@ -518,10 +520,16 @@ Tất cả sẽ sử dụng cùng một backbone (đã chọn ở §11) và cùn
 - Mục đích: có baseline để so sánh với literature, tránh bị reviewer hỏi "tại sao không so sánh với X?".
 
 | Phương pháp | Loss | Vai trò |
-|---|---|---|
+|---|---|---|---|
 | Prototypical Networks | Cross-entropy trên distances | Primary (3 seeds) |
+| GE2E (Generalized End-to-End) | GE2E Loss | Primary (3 seeds) <!-- SLR 2026-07-06: Added per SLR finding. GE2E is the dominant metric learning approach in 2024-2026 (Zhu 2024, SLT). Directly comparable to ProtoNet. --> |
 | Siamese Networks | Contrastive Loss | Secondary (1 seed) |
 | Triplet Networks | Triplet Loss (semi-hard) | Secondary (1 seed) |
+
+**Chi tiết GE2E protocol:**
+- GE2E loss adapted from speaker verification (Zhu 2024): per-batch enrollment centroids (Y/2 utterances) vs all test utterances; cosine similarity + softmax loss.
+- Mỗi batch: N classes × M utterances/class → split M/2 enrollment + M/2 test.
+- Cùng backbone, cùng số epochs, cùng learning rate schedule với ProtoNet.
 
 **Chi tiết secondary protocol:**
 - Siamese: dùng contrastive loss, margin=1.0, pair ratio 1:2 (pos:neg).
@@ -870,17 +878,24 @@ Các ablations (training strategy, augmentation, prototype method) không có hy
 
 **Hypothesis (H2):** Different feature representations interact differently with metric learning methods. We expect the ranking of methods to vary across feature types.
 
-**Thiết kế thí nghiệm:** Factorial Design 2 × 3
+**Thiết kế thí nghiệm:** Factorial Design 2 × 4 (updated 2026-07-06 per SLR findings)
 
-| Feature \ Metric Learning | Prototypical (N=5) | Siamese | Triplet |
-|---|---|---|---|
-| MFCC | Acc, F1, EER (3 seeds) | Acc, F1, EER (1 seed) | Acc, F1, EER (1 seed) |
-| Log-Mel Spectrogram | Acc, F1, EER (3 seeds) | Acc, F1, EER (1 seed) | Acc, F1, EER (1 seed) |
+| Feature \ Metric Learning | Prototypical (N=5) | GE2E | Siamese | Triplet |
+|---|---|---|---|---|
+| Log-Mel Spectrogram | Acc, F1, EER (3 seeds) | Acc, F1, EER (3 seeds) | Acc, F1, EER (1 seed) | Acc, F1, EER (1 seed) |
+| PCEN | Acc, F1, EER (3 seeds) | Acc, F1, EER (3 seeds) | Acc, F1, EER (1 seed) | Acc, F1, EER (1 seed) |
 
-- **Primary cells:** ProtoNet × {MFCC, Log-Mel} — 3 seeds each → 6 experiments.
-- **Secondary cells:** Siamese/Triplet × {MFCC, Log-Mel} — 1 seed each → 4 experiments.
-- Tổng: 10 experiments.
+- **Primary cells:** {ProtoNet, GE2E} × {Log-Mel, PCEN} — 3 seeds each → 12 experiments.
+- **Secondary cells:** Siamese/Triplet × {Log-Mel, PCEN} — 1 seed each → 4 experiments.
+- **MFCC ablation:** Best configuration retrained with MFCC for backward compatibility (1 seed).
+- **Zero-shot text enrollment ablation:** Best model + text encoder projection (1 seed, for discussion).
+- Tổng: 18 experiments.
 - Tất cả trên cùng episode-based protocol, cùng backbone (đã chọn từ §11).
+
+**Thay đổi so với thiết kế cũ:**
+- MFCC → PCEN (MFCC only as ablation): Per SLR, MFCC is outdated; PCEN is validated by EdgeSpot (ICASSP 2026) as zero-cost improvement.
+- Siamese/Triplet → secondary: GE2E added as primary due to SOTA status in 2024-2026 KWS literature.
+- Thêm zero-shot text enrollment ablation để contextualize against the dominant research trend.
 
 **Expected outcome:** Xác định feature và metric learning method tốt nhất cho UDKWS.
 
