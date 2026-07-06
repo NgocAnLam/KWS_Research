@@ -1,8 +1,10 @@
 # Evidence: Feature Extraction (MFCC vs Log-Mel vs PCEN)
 
-> **Mục đích:** Tổng hợp bằng chứng về feature extraction methods cho KWS.
+> **Research Question:** What audio features are most effective for keyword spotting in 2024-2026 literature?
+>
 > **Nguồn:** ~160 papers 2024-2026, foundational papers from 2017.
 > **Last updated:** 2026-07-06
+> **Evidence Strength:** Strong — large consensus across many papers and venues.
 
 ---
 
@@ -75,18 +77,30 @@
 ## 4. So sánh tổng hợp
 
 | Feature | Popularity 2024-2026 | Edge Cost | Noise Robustness | Recommendation |
-|---|---|---|---|---|
+|---|---|---|---|---|---|
 | Log-Mel | ★★★★★ (standard) | Thấp | Trung bình | **Primary** |
 | PCEN | ★★★☆☆ (growing) | Zero | Cao | **Ablation** |
 | MFCC | ★☆☆☆☆ (declining) | Thấp nhất | Thấp | **Historical baseline** |
 
 ---
 
-## 5. Kết luận cho thiết kế
+## 5. Contradictory Evidence
 
-| Quyết định | Mức độ chắc chắn | Cơ sở |
-|---|---|---|
-| Log-Mel → Primary | ✅ Cao | Consensus 2024-2026 literature |
-| PCEN → Ablation | 🔶 Trung bình | EdgeSpot 2026, cost thấp |
-| MFCC → Historical baseline | ✅ Cao | Không còn dùng primary, nhưng valid cho so sánh |
-| Xóa MFCC | ❌ Không nên | Mất kết nối với literature cũ |
+- MFCC vẫn được dùng trong một số paper edge deployment cũ (pre-2022) do số chiều thấp → latency thấp hơn.
+- PCEN tuy có noise robustness nhưng chưa được adopt rộng rãi (chỉ EdgeSpot 2026 và Wang 2017).
+- Log-Mel vs PCEN chưa được so sánh trực tiếp trong few-shot KWS setting (EdgeSpot dùng cả Log-Mel + PCEN).
+
+## 6. Remaining Gaps
+
+- Chưa có paper so sánh Log-Mel vs PCEN trong few-shot KWS (chỉ có trong closed-set KWS).
+- Chưa rõ PCEN có lợi thế đáng kể trong môi trường ít noise hay không.
+
+## 7. Evidence Strength
+
+**Strong.** Consensus rộng khắp 2024-2026 literature.
+
+## 8. Impact on Our Project (not a decision)
+
+- Log-Mel là primary feature hợp lý.
+- PCEN là ablation chi phí thấp, tiềm năng cao cho noisy environment.
+- MFCC nên giữ làm historical baseline để kết nối với literature cũ.

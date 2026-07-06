@@ -1,8 +1,10 @@
 # Evidence: Evaluation Protocols
 
-> **Mục đích:** Đánh giá hiện trạng evaluation protocols trong literature và xác định contribution.
+> **Research Question:** Is there a unified evaluation protocol for user-defined few-shot keyword spotting?
+>
 > **Nguồn:** ~30 papers từ few-shot KWS và UDKWS literature.
 > **Last updated:** 2026-07-06
+> **Evidence Strength:** Strong — heterogeneity confirmed across all papers surveyed.
 
 ---
 
@@ -43,13 +45,22 @@
 
 ---
 
-## 3. Kết luận cho thiết kế
+## 3. Contradictory Evidence
 
-| Quyết định | Mức độ chắc chắn | Cơ sở |
-|---|---|---|
-| Evaluation Protocol là contribution mạnh | ✅ Cao | Không có unified protocol trong literature |
-| Giữ episode-based cho Stage 1 | ✅ Cao | Standard trong few-shot literature |
-| Giữ streaming eval cho Stage 2 | ✅ Cao | Chỉ GE2E-KWS 2024 có streaming |
-| Thêm FAR-constrained metrics | 🔶 Nên thêm | EdgeSpot 2026, GE2E-KWS 2024 dùng |
-| Thêm speaker leakage analysis | ✅ Đã có | Rusci 2023 là reference duy nhất |
-| Public code/config | ✅ Đã có trong reproducibility section | Không paper nào làm đầy đủ |
+- GE2E-KWS (Zhu 2024) có streaming evaluation, nhưng chỉ là 1 paper — chưa đủ để gọi là standard.
+- EdgeSpot (2026) có FAR-constrained metrics, nhưng không có streaming eval.
+
+## 4. Remaining Gaps
+
+- Chưa có paper nào đề xuất unified protocol kết hợp: episode-based benchmark + enrollment workflow + streaming evaluation.
+- Chưa có paper nào công bố public code/config/seed cho KWS experiments.
+
+## 5. Evidence Strength
+
+**Strong.** Heterogeneity confirmed across all papers surveyed.
+
+## 6. Impact on Our Project (not a decision)
+
+- Unified protocol là contribution tiềm năng mạnh.
+- FAR-constrained metrics là standard mới nên thêm.
+- Streaming evaluation protocol vẫn còn gap trong literature.

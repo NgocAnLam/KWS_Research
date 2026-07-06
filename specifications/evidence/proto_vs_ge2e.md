@@ -1,8 +1,10 @@
 # Evidence: Metric Learning Methods (ProtoNet vs GE2E vs Triplet)
 
-> **Mục đích:** Tổng hợp bằng chứng từ literature về các phương pháp metric learning cho UDKWS.
+> **Research Question:** Which metric learning method (ProtoNet, GE2E, Triplet) has the strongest evidence for user-defined few-shot keyword spotting?
+>
 > **Nguồn:** ~20 papers from arXiv, IEEE, ISCA 2017-2026.
 > **Last updated:** 2026-07-06
+> **Evidence Strength:** Moderate — nhiều paper nhưng chưa có so sánh trực tiếp giữa các methods trong cùng điều kiện.
 
 ---
 
@@ -88,11 +90,24 @@
 
 ---
 
-## 5. Kết luận cho thiết kế
+## 5. Contradictory Evidence
 
-| Quyết định | Mức độ chắc chắn | Cơ sở |
-|---|---|---|
-| Giữ ProtoNet làm primary baseline | 🔶 Cao (vẫn valid) | Parnami 2022, Kim 2022, consensus literature |
-| Thêm GE2E ablation (1 seed) | 🔶 Trung bình | Zhu 2024, nhưng chưa so sánh với ProtoNet |
-| Giữ Triplet secondary | ✅ Cao | Rusci 2023 (open-set), Vygon 2021 |
-| Thay ProtoNet bằng GE2E | ❌ Không đủ evidence | Chưa có so sánh trực tiếp |
+- Rusci 2023 cho thấy Triplet > ProtoNet cho open-set on-device KWS. Tuy nhiên, đây là bài toán open-set (có unknown class), không phải few-shot closed-set.
+- Zhu 2024 cho thấy GE2E > Triplet, nhưng trên zero-shot KWS, không phải few-shot KWS.
+
+---
+
+## 6. Remaining Gaps
+
+- **Chưa có paper nào so sánh GE2E vs ProtoNet** trong cùng điều kiện (cùng backbone, cùng dataset, cùng shot setting).
+- Chưa rõ GE2E có outperform ProtoNet trong audio enrollment setting không.
+
+## 7. Evidence Strength
+
+**Moderate.** Nhiều paper, quality venues, nhưng chưa có so sánh trực tiếp.
+
+## 8. Impact on Our Project (not a decision)
+
+- ProtoNet vẫn là baseline valid cho audio enrollment UDKWS.
+- GE2E là ablation tiềm năng (chi phí thấp) nhưng chưa thể kết luận sẽ outperform.
+- Triplet vẫn valid cho open-set scenario.

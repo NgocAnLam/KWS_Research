@@ -1,8 +1,10 @@
 # Evidence: Backbone Architectures
 
-> **Mục đích:** So sánh các backbone architectures cho KWS trên edge devices.
+> **Research Question:** What lightweight backbone architectures are most effective for on-device keyword spotting?
+>
 > **Nguồn:** BC-ResNet (2021), Hello Edge (2017), EdgeSpot (2026), GE2E-KWS (2024), various 2024-2026 papers.
 > **Last updated:** 2026-07-06
+> **Evidence Strength:** Strong — BC-ResNet consistently leads accuracy/size trade-off.
 
 ---
 
@@ -46,12 +48,22 @@
 
 ---
 
-## 3. Kết luận cho thiết kế
+## 4. Contradictory Evidence
 
-| Quyết định | Mức độ chắc chắn | Cơ sở |
-|---|---|---|
-| BC-ResNet-32 → Primary backbone | ✅ Cao | EdgeSpot 2026, accuracy 98.7% |
-| DS-CNN → Baseline | ✅ Cao | Hello Edge 2017, widely deployed |
-| Tiny CNN → Baseline | 🟡 Có thể giữ | Simple, interpretable |
-| MobileNetV2 → Cân nhắc bỏ | 🟡 Có thể bỏ | Quá nặng cho Pi 4 |
-| Conformer → Future work | ✅ | Chưa có edge benchmark |
+- GE2E-KWS (Zhu 2024) dùng Conformer và cho thấy accuracy cao, nhưng chưa so sánh trực tiếp với BC-ResNet trên cùng dataset.
+- MobileNetV2 tuy nặng (2.5M) nhưng có optimized version (α=0.35) có thể deploy được trên RPi4 với latency chấp nhận được (~30ms) nếu quantization tốt.
+
+## 5. Remaining Gaps
+
+- Chưa có so sánh trực tiếp BC-ResNet vs Conformer trên edge device.
+- Chưa rõ BC-ResNet-32 có latency < 100ms trên RPi4 sau INT8 quantization không (cần benchmark).
+
+## 6. Evidence Strength
+
+**Strong.** BC-ResNet consistently leads accuracy/size trade-off.
+
+## 7. Impact on Our Project (not a decision)
+
+- BC-ResNet-32 là primary candidate hợp lý cho edge UDKWS.
+- DS-CNN là baseline phổ biến.
+- Conformer là hướng phát triển tương lai.

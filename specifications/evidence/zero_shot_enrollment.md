@@ -1,8 +1,10 @@
 # Evidence: Zero-shot Text-based Enrollment
 
-> **Mục đích:** Phân biệt bài toán audio enrollment (luận văn) vs zero-shot text enrollment (community trend).
+> **Research Question:** Does the rise of zero-shot text-based enrollment invalidate the audio enrollment approach in this project?
+>
 > **Nguồn:** ~15 papers 2024-2026.
 > **Last updated:** 2026-07-06
+> **Evidence Strength:** Strong for trend existence; Not applicable to project scope.
 
 ---
 
@@ -55,14 +57,26 @@
 
 ---
 
-## 3. Kết luận cho thiết kế
+## 3. Contradictory Evidence
 
-| Quyết định | Mức độ chắc chắn | Cơ sở |
-|---|---|---|
-| Giữ audio enrollment làm primary | ✅ Cao | Khác assumption, khác use case |
-| Thêm zero-shot ablation? | ❌ Không cần | Ngoài phạm vi (scope đã định) |
-| Thêm Related Work section | ✅ Nên làm | Để reviewer thấy đã biết trend |
-| Giải thích scope trong thesis | ✅ Bắt buộc | Tránh bị hỏi "sao không làm zero-shot" |
+- Text-based zero-shot enrollment đang là trend mạnh trong 2024-2026, có thể khiến reviewer hỏi "sao không làm zero-shot?"
+- Tuy nhiên, đây là bài toán khác (khác assumption input), không phải evidence chống lại audio enrollment.
+
+## 4. Remaining Gaps
+
+- Chưa có paper nào so sánh trực tiếp audio enrollment vs text enrollment trong cùng điều kiện.
+- Chưa rõ trade-off giữa convenience (text) và personalization (audio) cho smart home use case.
+
+## 5. Evidence Strength
+
+- **Trend existence:** Strong (~15 papers, quality venues).
+- **Impact on our project:** Not applicable (different problem scope).
+
+## 6. Impact on Our Project (not a decision)
+
+- Trend này không invalidate luận văn.
+- Cần có section trong Related Work giải thích scope: audio enrollment cho voice-only devices.
+- Không cần thay đổi design.
 
 ---
 

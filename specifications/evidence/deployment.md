@@ -1,8 +1,10 @@
 # Evidence: Edge Deployment & Vietnamese KWS
 
-> **Mục đích:** Tổng hợp bằng chứng về edge deployment approaches và Vietnamese KWS gap.
+> **Research Question:** What edge deployment approaches are standard for KWS, and is there existing work on Vietnamese KWS?
+>
 > **Nguồn:** ~30 papers 2017-2026.
 > **Last updated:** 2026-07-06
+> **Evidence Strength:** Strong for TFLite/RPi4; Strong for Vietnamese gap (zero papers found).
 
 ---
 
@@ -70,12 +72,24 @@
 
 ---
 
-## 3. Kết luận cho thiết kế
+## 3. Contradictory Evidence
 
-| Quyết định | Mức độ chắc chắn | Cơ sở |
-|---|---|---|
-| Giữ TFLite INT8 làm deployment framework | ✅ Cao | De facto standard |
-| Giữ Raspberry Pi 4 làm target device | ✅ Cao | Phổ biến trong literature |
-| Giữ streaming pipeline design | ✅ Cao | Chỉ GE2E-KWS 2024 có streaming |
-| Giữ Vietnamese case study | ✅ Cao | Zero existing work — genuine gap |
-| Thêm knowledge distillation ablation | 🔶 Nên thêm | EdgeSpot 2026, Gok 2025 |
+- Knowledge distillation tuy cải thiện accuracy (Gok 2025), nhưng tăng độ phức tạp training pipeline.
+- Một số edge papers dùng MCU (STM32) thay vì RPi4 — RPi4 có tài nguyên dồi dào hơn, latency không phải bottleneck chính.
+
+## 4. Remaining Gaps
+
+- Chưa có paper nào triển khai UDKWS tiếng Việt trên edge device.
+- Chưa có dataset UDKWS tiếng Việt nào được công bố.
+- Chưa rõ knowledge distillation có cần thiết cho BC-ResNet-32 trên RPi4 không (BC-ResNet đã nhẹ).
+
+## 5. Evidence Strength
+
+- **Edge deployment (TFLite/RPi4):** Strong.
+- **Vietnamese KWS gap:** Strong (0 papers).
+
+## 6. Impact on Our Project (not a decision)
+
+- TFLite INT8 + RPi4 là deployment stack hợp lý.
+- Vietnamese case study là genuine contribution.
+- Knowledge distillation là optional ablation — không bắt buộc.
