@@ -72,15 +72,15 @@
 
 | Category | Total | Read | In Progress |
 |---|---|---|---|
-| Few-shot KWS Methods | 7 | 7 | 0 |
+| Few-shot KWS Methods | 10 | 10 | 0 |
 | Feature Engineering | 2 | 2 | 0 |
 | Lightweight Backbones | 3 | 3 | 0 |
-| Training Strategies | 2 | 2 | 0 |
-| Evaluation Protocols | 0 | 0 | 0 |
-| Edge Deployment | 3 | 3 | 0 |
+| Training Strategies | 3 | 3 | 0 |
+| Evaluation Protocols | 1 | 1 | 0 |
+| Edge Deployment | 4 | 4 | 0 |
 | Vietnamese Speech | 0 | 0 | 1 |
-| Open-set / Unknown | 3 | 3 | 0 |
-| **Total** | **20** | **13** | **7** |
+| Open-set / Unknown | 4 | 4 | 0 |
+| **Total** | **27** | **19** | **8** |
 
 ---
 

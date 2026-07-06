@@ -97,6 +97,15 @@
 
 ---
 
+## 5b. New Evidence from PLCL & CLAD (2024-2025)
+
+| Paper | Finding | Impact |
+|---|---|---|
+| PLCL (Li 2025) | Phoneme-level contrastive outperforms utterance-level | 🔶 Consider phoneme-level for Vietnamese |
+| CLAD (Xi 2024) | Audio-audio InfoNCE + sliding window for continuous speech | 🔶 Streaming pipeline reference |
+| DMA-KWS (Ai 2026) | Dual-stage matching + phoneme-level verification | ✅ **97.85% AUC — SOTA framework** |
+| ProKWS (Pan 2026) | Prosody + phoneme fusion for personalized KWS | 🔶 Important for Vietnamese (tonal) |
+
 ## 6. Remaining Gaps
 
 - **Chưa có paper nào so sánh GE2E vs ProtoNet** trong cùng điều kiện (cùng backbone, cùng dataset, cùng shot setting).
