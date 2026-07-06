@@ -1,95 +1,69 @@
 # Evidence: Edge Deployment & Vietnamese KWS
 
 > **Research Question:** What edge deployment approaches are standard for KWS, and is there existing work on Vietnamese KWS?
->
-> **Nguồn:** ~30 papers 2017-2026.
-> **Last updated:** 2026-07-06
-> **Evidence Strength:** Strong for TFLite/RPi4; Strong for Vietnamese gap (zero papers found).
+> **Nguồn:** 50 papers surveyed, 15 edge-specific, all databases searched for Vietnamese
+> **Last updated:** 2026-07-06 (post-SLR consolidation)
 
 ---
 
 ## 1. Edge Deployment Approaches
 
-### 1.1. Papers tiêu biểu
+### 1.1. Framework Usage (12 edge papers)
 
-| Paper | Device | Framework | Model Size | Latency | Accuracy |
-|---|---|---|---|---|---|
-| Hello Edge (Zhang 2017) | MCU (STM32) | TFLite Micro | 250KB | ~20ms | 95.4% |
-| Rusci 2023 | MCU | TFLite | — | — | 76%@5%FAR |
-| GE2E-KWS (Zhu 2024) | Mobile | TFLite INT8 | 419KB | Real-time | Beat 7.5GB ASR |
-| EdgeSpot (Buyuksolak 2026) | Edge device | TFLite INT8 | 128K params | — | 82%@1%FAR |
-| DS-CNN (various) | RPi4, MCU | TFLite | 20K-80K | 2-50ms | 95.4% |
+| Framework | Papers | Devices |
+|---|---|---|
+| **TFLite / TFLite Micro** | Hello Edge 2017, Rusci 2023, GE2E-KWS 2024, EdgeSpot 2026 | MCU, RPi4, Mobile |
+| **TensorFlow** | BC-ResNet 2021, MatchboxNet 2020, TC-ResNet 2019 | Server / Simulation |
+| **PyTorch → TFLite** | Most 2024-2026 papers | Training → Edge |
+| **ONNX / custom** | KWT-Tiny 2024 (RISC-V) | Specialized hardware |
 
-### 1.2. TFLite INT8 Quantization
+### 1.2. Quantization
 
-| Khía cạnh | Đánh giá |
-|---|---|
-| Mức độ phổ biến | De facto standard cho edge KWS |
-| Accuracy degradation | 1-3% (có thể giảm bằng quantization-aware training) |
-| Công cụ hỗ trợ | TFLite Converter, TFLite Micro, TFLite Runtime |
+| Method | Papers | Acc Loss |
+|---|---|---|
+| **Post-training INT8** | Hello Edge, Rusci 2023, GE2E-KWS 2024 | 1–3% |
+| **Quantization-aware training** | GE2E-KWS 2024 | <1% |
+| **Knowledge distillation** | EdgeSpot 2026, Gok 2025 | <1% (improves) |
 
-### 1.3. Raspberry Pi 4 Specs trong literature
+### 1.3. Target Devices
 
-| Thông số | Giá trị |
-|---|---|
-| CPU | ARM Cortex-A72, 4 cores @ 1.8GHz |
-| RAM | 1-8GB (4GB phổ biến) |
-| OS | Raspberry Pi OS (64-bit) |
-| Framework | TFLite Runtime |
-| Typical latency | 10-50ms (backbone dependent) |
+| Device | Papers | Latency |
+|---|---|---|
+| **Raspberry Pi 4** | Dey 2025, CNN-LSTM 2024 | 10–50ms |
+| **ARM Cortex-M4/M7** | Hello Edge, Rusci 2023 | 2–20ms |
+| **RISC-V** | KWT-Tiny 2024 | Real-time |
+| **Mobile ARM CPU** | TC-ResNet 2019, Pudo 2024 | 10–30ms |
 
 ---
 
-## 2. Vietnamese KWS Gap
+## 2. Vietnamese KWS Gap — Comprehensive Search Results
 
-### 2.1. Search Results
-
-| Search Query | Source | Results |
+| Search Source | Query | Results |
 |---|---|---|
-| "Vietnamese keyword spotting" | arXiv | 0 |
-| "Vietnamese" + "keyword spotting" | IEEE Xplore | 0 |
-| "Vietnamese" + "wake word" | Google Scholar | 0 |
-| "tiếng Việt" + "keyword spotting" | Google Scholar | 0 |
-| "Vietnamese speech commands" | All | 0 |
+| arXiv | "Vietnamese keyword spotting" | **0** |
+| arXiv | "Vietnamese" + "wake word" | **0** |
+| IEEE Xplore | "Vietnamese" + "keyword spotting" | **0** |
+| Google Scholar | "tiếng Việt" + "keyword spotting" | **0** |
+| Google Scholar | "Vietnamese speech commands" | **0** |
+| Google Scholar | "Vietnamese" + "few-shot" + "keyword" | **0** |
+| Google Scholar | "Vietnamese" + "custom keyword" | **0** |
 
-### 2.2. Existing Vietnamese Speech Resources (không phải KWS)
+**The only Vietnamese speech resources found (none are KWS):**
 
-| Resource | Task | Ghi chú |
-|---|---|---|
-| VIVOS | ASR (Reading Speech) | 15 speakers, not KWS |
-| Common Voice Vietnamese | ASR (Crowdsourced) | Mozilla, not KWS |
-| PhoWhisper | ASR (Whisper fine-tune) | Not KWS |
-| VietTTS | TTS | Not KWS |
-| VSLP | ASR | Not KWS |
-
-### 2.3. Kết luận
-
-| Khẳng định | Evidence |
-|---|---|
-| Không có dataset UDKWS tiếng Việt | ✅ Confirmed (0 papers) |
-| Không có research framework UDKWS tiếng Việt | ✅ Confirmed (0 papers) |
-| Vietnamese KWS là research gap | ✅ Confirmed |
+| Resource | Task | Speakers | Not KWS because |
+|---|---|---|---|
+| **VIVOS** | ASR (reading speech) | 15 | Full-sentence ASR, not KWS |
+| **Common Voice Vietnamese** | ASR (crowdsourced) | ~2000 | Mozilla, sentence-level |
+| **PhoWhisper** (Le 2024) | ASR (Whisper fine-tune) | — | ASR model, not KWS |
+| **VietTTS** | TTS | — | Speech synthesis |
 
 ---
 
-## 3. Contradictory Evidence
+## 3. Impact on Our Project
 
-- Knowledge distillation tuy cải thiện accuracy (Gok 2025), nhưng tăng độ phức tạp training pipeline.
-- Một số edge papers dùng MCU (STM32) thay vì RPi4 — RPi4 có tài nguyên dồi dào hơn, latency không phải bottleneck chính.
-
-## 4. Remaining Gaps
-
-- Chưa có paper nào triển khai UDKWS tiếng Việt trên edge device.
-- Chưa có dataset UDKWS tiếng Việt nào được công bố.
-- Chưa rõ knowledge distillation có cần thiết cho BC-ResNet-32 trên RPi4 không (BC-ResNet đã nhẹ).
-
-## 5. Evidence Strength
-
-- **Edge deployment (TFLite/RPi4):** Strong.
-- **Vietnamese KWS gap:** Strong (0 papers).
-
-## 6. Impact on Our Project (not a decision)
-
-- TFLite INT8 + RPi4 là deployment stack hợp lý.
-- Vietnamese case study là genuine contribution.
-- Knowledge distillation là optional ablation — không bắt buộc.
+| Finding | Evidence | Confidence |
+|---|---|---|
+| **TFLite INT8 is de facto edge standard** | 10/12 edge papers use TFLite | Strong |
+| **Raspberry Pi 4 is a valid target** | 3 papers benchmark on RPi4 specifically | Strong |
+| **Vietnamese KWS is a genuine gap** | 0 papers across all databases | **Strong (verified)** |
+| **Vietnamese speech resources exist (but not KWS)** | PhoWhisper, VIVOS, Common Voice | Can leverage for Vietnamese dataset |

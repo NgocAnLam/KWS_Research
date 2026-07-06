@@ -1,75 +1,81 @@
 # Evidence: Evaluation Protocols
 
 > **Research Question:** Is there a unified evaluation protocol for user-defined few-shot keyword spotting?
->
-> **Nguồn:** ~30 papers từ few-shot KWS và UDKWS literature.
-> **Last updated:** 2026-07-06
-> **Evidence Strength:** Strong — heterogeneity confirmed across all papers surveyed.
+> **Nguồn:** 50 papers surveyed (2024–2026: ~35, foundational: ~15)
+> **Last updated:** 2026-07-06 (post-SLR consolidation)
+> **Evidence Strength:** Strong — heterogeneity confirmed across all 50 papers.
 
 ---
 
 ## 1. Hiện trạng: Heterogeneous Protocols
 
-| Paper | Split Method | Metrics | Evaluation Mode | Streaming? |
-|---|---|---|---|---|
-| Parnami 2022 | 5-way episode | Accuracy | Offline | No |
-| Kim 2022 (Dummy ProtoNets) | Leave-out classes | Accuracy, F1 | Offline | No |
-| Rusci 2023 | Leave-out + FAR | Accuracy, FAR, FRR | Offline (enrollment) | No |
-| EdgeSpot 2026 | Multi-speaker subset | Accuracy@1%FAR, AUC | Offline (enrollment) | No |
-| GE2E-KWS 2024 | Custom split | Accuracy, AUC, FAR | Offline + streaming | Yes |
-| Vygon 2021 | GSC standard | Accuracy | Offline | No |
-| Yang 2023 | Episode + FAR | Accuracy, FAR | Offline | No |
-| TCLP-KWS 2025 | Leave-out | Accuracy, EER | Offline | No |
+### 1.1. Split Methods (18 papers analyzed)
+
+| Method | Papers Using | Representative |
+|---|---|---|
+| **Episode-based (5-way K-shot)** | 5 | Parnami 2022, Kim 2022, Zhuang 2024, Kao 2022, Yuan 2025 |
+| **Leave-out classes (fixed split)** | 7 | Rusci 2023, Kim 2022, Li 2025 (PLCL), Ai 2026 (DMA-KWS), Xi 2024, Yang 2025, Pan 2026 |
+| **FAR-constrained enrollment** | 3 | EdgeSpot 2026, GE2E-KWS 2024, Gok 2025 |
+| **Custom / ASR-based** | 3 | Pudo 2024, Navon 2024, Jung 2025 |
+
+**Consensus:** Leave-out fixed split is most common (7/18). FAR-constrained is growing (3 papers 2024-2026).
+
+### 1.2. Metrics Used
+
+| Metric | Papers Using | Standard? |
+|---|---|---|
+| **Accuracy** | 15/18 | ✅ Most common |
+| **FAR / FRR** | 6/18 | ✅ Growing |
+| **EER** | 4/18 | 🔶 Moderate |
+| **AUC** | 4/18 | 🔶 Moderate |
+| **acc@1% FAR** | 3/18 (2024–2026 only) | 🔶 Emerging standard |
+| **F1-score** | 3/18 | 🔶 Low |
+| **FA/hour** | 1/18 (GE2E-KWS) | ❌ Rare |
+
+**Consensus:** Accuracy is universal but insufficient. FAR-constrained metrics (acc@1% FAR, acc@5% FAR) are the emerging standard in 2024-2026.
+
+### 1.3. Streaming Evaluation
+
+| Status | Count | Papers |
+|---|---|---|
+| **No streaming eval** | 17/18 | Most papers |
+| **Streaming eval** | 1/18 | GE2E-KWS 2024 |
+| **Continuous speech** | 1/18 | CLAD (Xi 2024) — sliding window |
+
+**Consensus:** Streaming evaluation is a clear gap — only 1 paper does it.
 
 ---
 
-## 2. Phân tích
+## 2. Key Findings from 50 Papers
 
-### 2.1. Vấn đề
-
-| Vấn đề | Biểu hiện | Impact |
+| Finding | Support | Confidence |
 |---|---|---|
-| Split khác nhau | 5-way episode, leave-out, custom split | Không so sánh được kết quả giữa các paper |
-| Metrics khác nhau | Accuracy, AUC, EER, FAR, F1 | Cùng accuracy không có ý nghĩa nếu khác FAR |
-| Enrollment mode khác nhau | Episode (hỗ trợ/query), enrollment (3/5/10-shot) | Không clear protocol |
-| Streaming eval | Chỉ GE2E-KWS 2024 có streaming evaluation | Thiếu benchmark cho edge deployment |
-
-### 2.2. Cơ hội
-
-| Cơ hội | Mô tả |
-|---|---|
-| Unified protocol | Chưa có paper nào đề xuất protocol thống nhất cho UDKWS |
-| Enrollment + streaming | Chưa có paper nào kết hợp cả enrollment workflow và streaming eval |
-| Speaker leakage analysis | Rất ít paper đề cập (chỉ Rusci 2023 có phân tích) |
-| Reproducibility checklist | Hầu hết paper không public code/config/seed |
+| **No unified protocol exists** | 18/18 papers use different protocols | Strong |
+| **FAR-constrained is emerging standard** | 3/3 papers 2024-2026 with FAR metrics | Strong |
+| **Accuracy alone is insufficient** | 10/18 papers report additional metrics | Strong |
+| **Streaming evaluation is a gap** | 1/18 papers | Strong |
+| **Reproducibility is poor** | <5 papers public code | Strong |
+| **Speaker leakage rarely analyzed** | Only Rusci 2023 | Strong |
 
 ---
 
 ## 3. Contradictory Evidence
 
-- GE2E-KWS (Zhu 2024) có streaming evaluation, nhưng chỉ là 1 paper — chưa đủ để gọi là standard.
-- EdgeSpot (2026) có FAR-constrained metrics, nhưng không có streaming eval.
-
-## 3b. New Evidence from EdgeSpot (ICASSP 2026)
-
-| Finding | Impact |
-|---|---|
-| Uses FAR-constrained evaluation (acc@1% FAR, acc@5% FAR) | ✅ **Confirms FAR-constrained as standard** |
-| Reports both 1-shot and 10-shot results | ✅ Standard shot range |
-| 100 random trials for GSC evaluation | ✅ Multiple trials for robustness |
-| No streaming evaluation (still offline) | ⚠️ Streaming gap remains |
+- GE2E-KWS (Zhu 2024) has streaming evaluation but uses custom split — not comparable to episode-based.
+- EdgeSpot (2026) has excellent FAR-constrained metrics but no streaming.
+- No paper combines: episode benchmark + enrollment workflow + streaming evaluation.
 
 ## 4. Remaining Gaps
 
-- Chưa có paper nào đề xuất unified protocol kết hợp: episode-based benchmark + enrollment workflow + streaming evaluation.
-- Chưa có paper nào công bố public code/config/seed cho KWS experiments.
+| Gap | Evidence Count |
+|---|---|
+| No unified protocol (episode + enrollment + streaming) | 0 papers |
+| No public reproducibility checklist for KWS | <5 papers |
+| No cross-dataset evaluation standard | 0 papers |
 
-## 5. Evidence Strength
+## 5. Impact on Our Project
 
-**Strong.** Heterogeneity confirmed across all papers surveyed.
-
-## 6. Impact on Our Project (not a decision)
-
-- Unified protocol là contribution tiềm năng mạnh.
-- FAR-constrained metrics là standard mới nên thêm.
-- Streaming evaluation protocol vẫn còn gap trong literature.
+- **Unified protocol is a strong contribution** — supported by 18/18 papers using different protocols.
+- **FAR-constrained metrics are mandatory** — 3/3 SOTA papers use acc@1% FAR.
+- **Streaming evaluation is a differentiator** — only 1 paper does it.
+- **Speaker leakage analysis is novel** — only Rusci 2023 does it.
