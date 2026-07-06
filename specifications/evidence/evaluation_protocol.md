@@ -50,6 +50,15 @@
 - GE2E-KWS (Zhu 2024) có streaming evaluation, nhưng chỉ là 1 paper — chưa đủ để gọi là standard.
 - EdgeSpot (2026) có FAR-constrained metrics, nhưng không có streaming eval.
 
+## 3b. New Evidence from EdgeSpot (ICASSP 2026)
+
+| Finding | Impact |
+|---|---|
+| Uses FAR-constrained evaluation (acc@1% FAR, acc@5% FAR) | ✅ **Confirms FAR-constrained as standard** |
+| Reports both 1-shot and 10-shot results | ✅ Standard shot range |
+| 100 random trials for GSC evaluation | ✅ Multiple trials for robustness |
+| No streaming evaluation (still offline) | ⚠️ Streaming gap remains |
+
 ## 4. Remaining Gaps
 
 - Chưa có paper nào đề xuất unified protocol kết hợp: episode-based benchmark + enrollment workflow + streaming evaluation.

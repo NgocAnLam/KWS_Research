@@ -90,17 +90,27 @@
 - PCEN tuy có noise robustness nhưng chưa được adopt rộng rãi (chỉ EdgeSpot 2026 và Wang 2017).
 - Log-Mel vs PCEN chưa được so sánh trực tiếp trong few-shot KWS setting (EdgeSpot dùng cả Log-Mel + PCEN).
 
+## 5b. New Evidence from EdgeSpot (ICASSP 2026)
+
+| Finding | Impact |
+|---|---|
+| PCEN + BC-ResNet: +8.3% acc @1% FAR vs BC-ResNet alone (82.0% vs 73.7%) | ✅ **Strong evidence for PCEN in FS-KWS** |
+| PCEN improves cross-domain generalization (MSWC → GSC) | ✅ **PCEN beneficial for domain shift** |
+| PCEN trained end-to-end, all parameters differentiable | ✅ **Zero inference cost** |
+| Uses 40-band Log-Mel → PCEN (not replace, augment) | ✅ **Log-Mel + PCEN combination validated** |
+
 ## 6. Remaining Gaps
 
 - Chưa có paper so sánh Log-Mel vs PCEN trong few-shot KWS (chỉ có trong closed-set KWS).
 - Chưa rõ PCEN có lợi thế đáng kể trong môi trường ít noise hay không.
+- EdgeSpot kết hợp PCEN với KD từ SSL teacher — không rõ PCEN đóng góp bao nhiêu nếu không có KD.
 
 ## 7. Evidence Strength
 
-**Strong.** Consensus rộng khắp 2024-2026 literature.
+**Strong.** Consensus rộng khắp 2024-2026 literature. EdgeSpot (2026) cung cấp evidence trực tiếp cho PCEN trong FS-KWS.
 
 ## 8. Impact on Our Project (not a decision)
 
 - Log-Mel là primary feature hợp lý.
-- PCEN là ablation chi phí thấp, tiềm năng cao cho noisy environment.
+- PCEN là ablation chi phí thấp, tiềm năng cao — EdgeSpot chứng minh +8.3% trong FS-KWS.
 - MFCC nên giữ làm historical baseline để kết nối với literature cũ.

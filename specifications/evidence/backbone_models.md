@@ -57,13 +57,24 @@
 
 - Chưa có so sánh trực tiếp BC-ResNet vs Conformer trên edge device.
 - Chưa rõ BC-ResNet-32 có latency < 100ms trên RPi4 sau INT8 quantization không (cần benchmark).
+- EdgeSpot (2026) dùng BC-ResNet variant (Fused blocks + SDPA) — cần kiểm tra xem BC-ResNet-32 gốc có cạnh tranh không.
+
+## 5b. New Evidence from EdgeSpot (ICASSP 2026)
+
+| Finding | Impact |
+|---|---|
+| BC-ResNet variant + PCEN + SDPA: 82.0% @1% FAR (10-shot), 128K params | ✅ **Confirms BC-ResNet as top candidate** |
+| Fused BC-ResBlocks (early fusion) improve accuracy vs vanilla BC-ResNet | 🟡 Có thể adopt early fusion |
+| 64-D embeddings are sufficient for FS-KWS | ✅ **Matches our design** |
+| 29.4M MACs — feasible for RPi4 | ✅ **Edge deployment confirmed** |
 
 ## 6. Evidence Strength
 
-**Strong.** BC-ResNet consistently leads accuracy/size trade-off.
+**Strong.** BC-ResNet consistently leads accuracy/size trade-off. EdgeSpot (ICASSP 2026) provides additional validation in FS-KWS setting.
 
 ## 7. Impact on Our Project (not a decision)
 
 - BC-ResNet-32 là primary candidate hợp lý cho edge UDKWS.
 - DS-CNN là baseline phổ biến.
 - Conformer là hướng phát triển tương lai.
+- EdgeSpot's early fusion và SDPA là tham khảo cho optional improvements.
