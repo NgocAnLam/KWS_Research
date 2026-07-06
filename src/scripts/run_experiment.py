@@ -1,13 +1,13 @@
 """
 Experiment runner for EXP001 — 2×3 factorial design.
 
-Fixes applied per code review:
-- Comprehensive random seeding (Python, NumPy, PyTorch, CUDA, cuDNN)
-- Structured output per config subdirectory
-- 12 metrics including FAR-constrained
-- Resource logging (params, FLOPs, latency, memory)
-- Git commit hash tracking
-- Config copy in output dir
+Pre-flight checks (research-design-v2.0):
+- Full git commit SHA + clean working tree
+- Configuration SHA256 hash
+- Environment snapshot (Python, PyTorch, CUDA, GPU)
+- Dataset integrity (speaker overlap, sample counts)
+- Disk space estimation
+- Random seed verification (run twice, compare)
 """
 
 import argparse
@@ -17,15 +17,15 @@ import os
 import sys
 import random
 import subprocess
-import shutil
+import hashlib
 import time
+import platform
 from datetime import datetime
 from pathlib import Path
 
 import torch
 import torch.backends.cudnn as cudnn
 import numpy as np
-from thop import profile
 
 from kws_framework.dataset.dataset import GSCv2Dataset, EpisodeSampler
 from kws_framework.features.features import FeatureExtractor
@@ -34,7 +34,8 @@ from kws_framework.losses.losses import PrototypicalLoss, GE2ELoss, TripletLoss
 from kws_framework.trainer.trainer import Trainer
 from kws_framework.trainer.evaluator import Evaluator
 
-
+EXPERIMENT_BRANCH = "main"
+DESIGN_TAG = "research-design-v2.0"
 LOSS_MAP = {
     "prototypical": PrototypicalLoss,
     "ge2e": GE2ELoss,
@@ -42,8 +43,10 @@ LOSS_MAP = {
 }
 
 
+# ─── Pre-flight utilities ────────────────────────────────────────────────────
+
+
 def set_seed(seed: int, deterministic: bool = True):
-    """Fix ALL random sources for reproducibility."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -56,14 +59,90 @@ def set_seed(seed: int, deterministic: bool = True):
     os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 
 
-def get_git_commit() -> str:
+def get_git_info() -> dict:
+    info = {"commit": "unknown", "branch": "unknown", "tag": "none", "clean": False}
     try:
-        return subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"],
-            stderr=subprocess.DEVNULL
+        info["commit"] = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL
         ).decode().strip()
+        info["branch"] = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"], stderr=subprocess.DEVNULL
+        ).decode().strip()
+        status = subprocess.check_output(
+            ["git", "status", "--porcelain"], stderr=subprocess.DEVNULL
+        ).decode().strip()
+        info["clean"] = len(status) == 0
+        try:
+            info["tag"] = subprocess.check_output(
+                ["git", "describe", "--exact-match", "--tags", "HEAD"],
+                stderr=subprocess.DEVNULL
+            ).decode().strip()
+        except subprocess.CalledProcessError:
+            info["tag"] = "none"
     except Exception:
-        return "unknown"
+        pass
+    return info
+
+
+def config_sha256(config_path: str) -> str:
+    with open(config_path, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()[:16]
+
+
+def snapshot_environment(output_dir: Path):
+    env = {
+        "python": sys.version,
+        "platform": platform.platform(),
+        "torch": torch.__version__ if "torch" in sys.modules else "N/A",
+        "cuda_available": torch.cuda.is_available(),
+        "cuda_version": torch.version.cuda if torch.cuda.is_available() else "N/A",
+        "cudnn_version": torch.backends.cudnn.version() if torch.cuda.is_available() else "N/A",
+        "gpu_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
+        "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "N/A",
+        "gpu_vram_gb": torch.cuda.get_device_properties(0).total_mem / 1e9
+            if torch.cuda.is_available() else 0,
+        "numpy": np.__version__,
+    }
+    with open(output_dir / "environment.json", "w") as f:
+        json.dump(env, f, indent=2)
+    return env
+
+
+def audit_dataset(data_root: str, split: str) -> dict:
+    ds = GSCv2Dataset(data_root, split=split)
+    info = {
+        "split": split,
+        "total_files": len(ds),
+        "classes_found": ds.classes,
+        "seen_classes": ds.seen_classes,
+        "unseen_classes": ds.unseen_classes,
+    }
+    speaker_counts = {}
+    for entry in ds.index:
+        cls, _, spk, _ = entry
+        speaker_counts.setdefault(spk, set()).add(cls)
+    info["unique_speakers"] = len(speaker_counts)
+    info["speaker_class_counts"] = {
+        spk: len(cls_list) for spk, cls_list in speaker_counts.items()
+    }
+    return info
+
+
+def verify_determinism(config: dict, output_dir: Path) -> dict:
+    set_seed(config["seed"])
+    m1 = BCResNet32(embedding_dim=config.get("embedding_dim", 64))
+    p1 = [p.clone().detach() for p in m1.parameters()]
+    set_seed(config["seed"])
+    m2 = BCResNet32(embedding_dim=config.get("embedding_dim", 64))
+    p2 = [p.clone().detach() for p in m2.parameters()]
+    identical = all(torch.equal(a, b) for a, b in zip(p1, p2))
+    result = {"deterministic_init": identical, "seed": config["seed"]}
+    with open(output_dir / "seed_verify.json", "w") as f:
+        json.dump(result, f)
+    return result
+
+
+# ─── Core experiment ─────────────────────────────────────────────────────────
 
 
 def count_parameters(model) -> dict:
@@ -72,76 +151,116 @@ def count_parameters(model) -> dict:
     return {"total_params": total, "trainable_params": trainable}
 
 
-def estimate_flops(model, input_shape) -> float:
-    """Estimate FLOPs using thop. Returns MACs (G)."""
-    try:
-        dummy = torch.randn(1, *input_shape)
-        macs, _ = profile(model, inputs=(dummy,), verbose=False)
-        return macs / 1e6  # convert to M
-    except Exception:
-        return 0.0
-
-
 def build_output_path(base_dir: str, feature: str, loss: str, seed: int) -> Path:
-    """Structured output: experiments/exp001/LogMel_Proto_seed42/"""
     feature_short = "LogMel" if feature == "log_mel" else "PCEN"
     loss_short = loss.capitalize()
-    dir_name = f"{feature_short}_{loss_short}_seed{seed}"
-    return Path(base_dir) / dir_name
+    return Path(base_dir) / f"{feature_short}_{loss_short}_seed{seed}"
 
 
-def main(config: dict):
+def main(config: dict, smoke: bool = False):
     exp_name = config.get("experiment_name", "exp001")
     seed = config.get("seed", 42)
     data_root = config.get("data_root", "data/raw/speech_commands_v0.02")
     feature_type = config.get("feature_type", "log_mel")
     loss_name = config.get("loss", "prototypical")
+    config_path = config.get("_config_path", "src/configs/exp001.yaml")
 
-    set_seed(seed)
-    git_hash = get_git_commit()
-
-    # Structured output directory
     output_dir = build_output_path(f"experiments/{exp_name}", feature_type, loss_name, seed)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Save config copy
-    config["git_commit"] = git_hash
-    config["start_time"] = datetime.now().isoformat()
-    with open(output_dir / "config.yaml", "w") as f:
-        yaml.dump(config, f, default_flow_style=False)
-    with open(output_dir / "seed.txt", "w") as f:
-        f.write(str(seed))
+    # ── Pre-flight checks ────────────────────────────────────────────────
 
-    # Dataset
-    print(f"[{exp_name}] Loading dataset...")
-    train_dataset = GSCv2Dataset(data_root, split="training")
-    test_dataset = GSCv2Dataset(data_root, split="testing")
+    print(f"\n{'='*60}")
+    print(f"EXP001 — Pre-flight Checks")
+    print(f"{'='*60}")
 
-    # Verify speaker leakage
-    train_speakers = set(x[2] for x in train_dataset.index)
-    test_speakers = set(x[2] for x in test_dataset.index)
-    overlap = train_speakers & test_speakers
-    print(f"  Speakers: train={len(train_speakers)}, test={len(test_speakers)}, overlap={len(overlap)}")
+    git_info = get_git_info()
+    print(f"  Git commit: {git_info['commit'][:12]}")
+    print(f"  Branch:     {git_info['branch']}")
+    print(f"  Tag:        {git_info['tag']}")
+    print(f"  Clean tree: {git_info['clean']}")
+    if not git_info["clean"]:
+        print("  ⚠ WARNING: Uncommitted changes in working tree")
 
-    # Feature extractor
+    cfg_hash = config_sha256(config_path)
+    print(f"  Config SHA256: {cfg_hash}")
+
+    env = snapshot_environment(output_dir)
+    print(f"  Python:   {env['python'].split()[0]}")
+    print(f"  PyTorch:  {env['torch']}")
+    print(f"  CUDA:     {env['cuda_version']}")
+    print(f"  GPU:      {env['gpu_name']} ({env['gpu_vram_gb']:.1f} GB)")
+    print(f"  Devices:  {env['gpu_count']}")
+
+    # Dataset audit
+    train_info = audit_dataset(data_root, "training")
+    test_info = audit_dataset(data_root, "testing")
+    train_speakers = set()
+    test_speakers_full = set()
+    ds_temp = GSCv2Dataset(data_root, split="training")
+    for e in ds_temp.index:
+        train_speakers.add(e[2])
+    ds_test = GSCv2Dataset(data_root, split="testing")
+    for e in ds_test.index:
+        test_speakers_full.add(e[2])
+    speaker_overlap = len(train_speakers & test_speakers_full)
+    print(f"  Dataset: train={train_info['total_files']}, test={test_info['total_files']}")
+    print(f"  Speaker overlap (train ∩ test): {speaker_overlap}")
+
+    # Seed verification
+    print(f"  Verifying deterministic init (seed={seed})...")
+    det = verify_determinism(config, output_dir)
+    print(f"  Deterministic init: {det['deterministic_init']}")
+    if not det["deterministic_init"]:
+        print("  ⚠ WARNING: Model init is NOT deterministic. Check cuDNN/cuda.")
+
+    # Disk space estimate
+    estimated_mb = 0.5 + (config.get("epochs", 40) * 0.01)
+    print(f"  Estimated output size: ~{estimated_mb:.1f} MB")
+
+    # Save pre-flight manifest
+    manifest = {
+        "experiment": exp_name,
+        "feature": feature_type,
+        "loss": loss_name,
+        "seed": seed,
+        "git": git_info,
+        "config_sha256": cfg_hash,
+        "environment": env,
+        "dataset_train": train_info,
+        "dataset_test": test_info,
+        "speaker_overlap_train_test": speaker_overlap,
+        "deterministic_init": det["deterministic_init"],
+        "smoke_test": smoke,
+    }
+    with open(output_dir / "manifest.json", "w") as f:
+        json.dump(manifest, f, indent=2)
+
+    if smoke:
+        print(f"\n  SMOKE TEST MODE: config={feature_type}+{loss_name}, seed={seed}")
+        config["epochs"] = min(config.get("epochs", 40), 3)
+        config["n_episodes_train"] = 10
+        config["n_episodes_eval"] = 20
+
+    # ── Training ──────────────────────────────────────────────────────────
+
+    set_seed(seed)
+    print(f"\n{'='*60}")
+    print(f"Training: feature={feature_type}, loss={loss_name}, seed={seed}")
+    print(f"{'='*60}")
+
     feature_extractor = FeatureExtractor(feature_type=feature_type)
-
-    # Backbone
     backbone = BCResNet32(
         input_channels=config.get("n_mels", 40),
         embedding_dim=config.get("embedding_dim", 64),
     )
-
-    # Resource logging
     params = count_parameters(backbone)
-    print(f"  Params: {params['total_params']/1e3:.1f}K total, {params['trainable_params']/1e3:.1f}K trainable")
+    print(f"  Backbone params: {params['total_params']/1e3:.1f}K")
     with open(output_dir / "params.json", "w") as f:
         json.dump(params, f)
 
-    # Loss
     loss_fn = LOSS_MAP[loss_name]()
 
-    # Episode config
     n_way = config.get("n_way", 5)
     n_support = config.get("n_support", 5)
     n_query = config.get("n_query", 5)
@@ -149,25 +268,19 @@ def main(config: dict):
     n_episodes_eval = config.get("n_episodes_eval", 600)
     epochs = config.get("epochs", 40)
 
-    # Trainer
     trainer = Trainer(backbone, feature_extractor, loss_fn, config)
     evaluator = Evaluator(backbone, feature_extractor, config)
 
-    # Samplers (separate seeds for train/eval)
     train_sampler = EpisodeSampler(
-        train_dataset, n_way=n_way, n_support=n_support,
-        n_query=n_query, seed=seed
+        train_dataset := GSCv2Dataset(data_root, split="training"),
+        n_way=n_way, n_support=n_support, n_query=n_query, seed=seed
     )
     eval_sampler = EpisodeSampler(
-        test_dataset, n_way=n_way, n_support=n_support,
-        n_query=n_query, seed=seed + 1000
+        GSCv2Dataset(data_root, split="testing"),
+        n_way=n_way, n_support=n_support, n_query=n_query, seed=seed + 1000
     )
 
-    print(f"  Config: feature={feature_type}, loss={loss_name}, {n_way}-way {n_support}-shot")
-    print(f"  Output: {output_dir}")
-
-    # Training
-    print(f"  Training {epochs} epochs...")
+    print(f"  Episode: {n_way}-way {n_support}-shot, {epochs} epochs")
     train_log = []
     t_start = time.time()
 
@@ -180,33 +293,31 @@ def main(config: dict):
             qd = torch.FloatTensor(query_data).unsqueeze(1)
             sl = torch.LongTensor(support_labels)
             ql = torch.LongTensor(query_labels)
-            batch = (sd, sl, qd, ql)
-            loss = trainer.train_epoch([batch])
+            loss = trainer.train_epoch([(sd, sl, qd, ql)])
             epoch_loss += loss
 
-        avg_loss = epoch_loss / n_episodes_train
+        avg_loss = epoch_loss / max(n_episodes_train, 1)
         train_log.append({"epoch": epoch + 1, "loss": avg_loss})
-
-        if (epoch + 1) % 10 == 0 or epoch == 0:
-            print(f"    Epoch {epoch+1}/{epochs}: loss = {avg_loss:.4f}")
+        if (epoch + 1) % max(1, epochs // 4) == 0 or epoch == 0:
+            print(f"  Epoch {epoch+1}/{epochs}: loss = {avg_loss:.4f}")
 
     train_time = time.time() - t_start
-
-    # Save training log
     with open(output_dir / "train_log.json", "w") as f:
         json.dump(train_log, f)
 
-    # Evaluation
+    # ── Evaluation ────────────────────────────────────────────────────────
+
     print(f"  Evaluating ({n_episodes_eval} episodes)...")
     t_eval_start = time.time()
     results = evaluator.evaluate_full(eval_sampler, n_episodes=n_episodes_eval)
     eval_time = time.time() - t_eval_start
 
-    # Inference latency
-    sample_data, _, _, _ = eval_sampler.sample_episode(test_dataset.unseen_classes)
+    # Latency
+    sample_data, _, _, _ = eval_sampler.sample_episode(train_dataset.unseen_classes)
     dummy = torch.FloatTensor(sample_data[:1]).unsqueeze(1)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    dummy = dummy.to(device)
     if torch.cuda.is_available():
-        dummy = dummy.cuda()
         torch.cuda.synchronize()
     t_lat = time.time()
     with torch.no_grad():
@@ -217,17 +328,20 @@ def main(config: dict):
         torch.cuda.synchronize()
     latency_ms = (time.time() - t_lat) / 100 * 1000
 
-    # Build final metrics
+    # ── Metrics ───────────────────────────────────────────────────────────
+
     metrics = {
         # Experiment info
         "experiment": exp_name,
         "feature": feature_type,
         "loss": loss_name,
         "seed": seed,
-        "git_commit": git_hash,
+        "git_commit": git_info["commit"][:12],
+        "config_sha256": cfg_hash,
         "timestamp": datetime.now().isoformat(),
+        "smoke_test": smoke,
 
-        # Few-shot eval metrics
+        # Few-shot eval
         "accuracy": results["accuracy"],
         "accuracy_std": results["accuracy_std"],
         "precision": results["precision"],
@@ -243,9 +357,9 @@ def main(config: dict):
         # Resources
         "total_params": params["total_params"],
         "trainable_params": params["trainable_params"],
-        "inference_latency_ms": latency_ms,
-        "training_time_s": train_time,
-        "evaluation_time_s": eval_time,
+        "inference_latency_ms": round(latency_ms, 2),
+        "training_time_s": round(train_time, 1),
+        "evaluation_time_s": round(eval_time, 1),
 
         # Config
         "n_way": n_way,
@@ -255,11 +369,10 @@ def main(config: dict):
         "epochs": epochs,
     }
 
-    # Save metrics
     with open(output_dir / "metrics.json", "w") as f:
         json.dump(metrics, f, indent=2)
 
-    print(f"\n  === Results ===")
+    print(f"\n  ── Results ──")
     print(f"  Accuracy:     {metrics['accuracy']:.4f} ± {metrics['accuracy_std']:.4f}")
     print(f"  Precision:    {metrics['precision']:.4f}")
     print(f"  Recall:       {metrics['recall']:.4f}")
@@ -271,7 +384,10 @@ def main(config: dict):
     print(f"  Latency:      {metrics['inference_latency_ms']:.2f} ms")
     print(f"  Params:       {metrics['total_params']/1e3:.1f}K")
     print(f"  Train time:   {train_time:.1f}s")
-    print(f"  Saved to:     {output_dir}")
+    print(f"  Saved:        {output_dir}")
+
+    if smoke:
+        print(f"\n  ⚠ SMOKE TEST — results not meaningful for analysis")
 
 
 if __name__ == "__main__":
@@ -280,10 +396,12 @@ if __name__ == "__main__":
     parser.add_argument("--feature", type=str, default=None)
     parser.add_argument("--loss", type=str, default=None)
     parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--smoke", action="store_true", help="Mini run (3 epochs, 10 episodes)")
     args = parser.parse_args()
 
     with open(args.config) as f:
         config = yaml.safe_load(f)
+    config["_config_path"] = args.config
 
     if args.feature:
         config["feature_type"] = args.feature
@@ -292,4 +410,4 @@ if __name__ == "__main__":
     if args.seed is not None:
         config["seed"] = args.seed
 
-    main(config)
+    main(config, smoke=args.smoke)
