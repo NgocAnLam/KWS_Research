@@ -1,24 +1,34 @@
+---
+# === METADATA (điền trước khi đọc) ===
+# Tạo metadata riêng tại papers/metadata/<filename>.md
+title:
+authors:
+venue:
+year:
+doi:
+publisher:
+conference_rank:       # A* / A / B / None
+journal_quartile:      # Q1 / Q2 / Q3 / None
+open_access: true
+github:
+dataset:
+checkpoint:
+paper_url:
+pdf_path: papers/<filename>.pdf
+keywords: []
+# ====================================
+-->
+
 # Paper Review
-
-> **Template for Systematic Literature Review**
-> Điền đầy đủ các trường để đảm bảo consistent data extraction.
+> Điền sau khi đọc PDF. Không tóm tắt từ abstract.
 
 ---
 
-## Metadata
+## 1. Summary
 
-| Field | Value |
-|---|---|
-| **Title** | |
-| **Authors** | |
-| **Venue** | |
-| **Year** | |
-| **DOI / URL** | |
-| **Citation (BibTeX)** | |
+<!-- 3–5 câu ngắn gọn -->
 
----
-
-## Research
+## 2. Research
 
 | Field | Value |
 |---|---|
@@ -27,17 +37,15 @@
 | **Dataset** | |
 | **Backbone** | |
 | **Audio Feature** | |
-| **Metric Learning** | ProtoNet / Siamese / Triplet / Other |
-| **K-shot setting** | 1 / 3 / 5 / Other |
-| **Training strategy** | Scratch / Pretrain + FT / Other |
-| **Evaluation protocol** | Episode / Fixed split / Leave-out |
-| **Unknown detection** | Threshold / Open-set / None |
-| **Edge deployment** | Device / Simulation / None |
+| **Metric Learning** | ProtoNet / Siamese / Triplet / Other / None |
+| **K-shot setting** | 1 / 3 / 5 / Other / N/A |
+| **Training strategy** | Scratch / Pretrain + FT / Other / N/A |
+| **Evaluation protocol** | Episode / Fixed split / Leave-out / Other |
+| **Unknown detection** | Threshold / Open-set / None / N/A |
+| **Edge deployment** | Device / Simulation / None / N/A |
 | **Streaming evaluation** | Yes / No |
 
----
-
-## Results
+## 3. Key Results
 
 | Metric | Value |
 |---|---|
@@ -46,9 +54,7 @@
 | **Model size** | |
 | **Other metrics** | |
 
----
-
-## Quality Assessment (0–2 each)
+## 4. Quality Assessment (0–2 each)
 
 | Criterion | Score | Notes |
 |---|---|---|
@@ -59,9 +65,7 @@
 | QA5: Edge evaluation | | |
 | **Total ( /10)** | | |
 
----
-
-## Analysis
+## 5. Analysis
 
 ### Strengths
 
@@ -71,9 +75,7 @@
 
 ### Open Questions
 
----
-
-## BibTeX
+## 6. BibTeX
 
 ```bibtex
 
@@ -81,10 +83,11 @@
 
 ---
 
-## Review Metadata
+## Review Log
 
 | Field | Value |
 |---|---|
 | **Reviewed by** | |
 | **Date** | |
-| **Reading notes file** | `papers/<topic>/notes.md` |
+| **PDF file** | `papers/<filename>.pdf` |
+| **Metadata file** | `papers/metadata/<filename>.md` |
