@@ -1,0 +1,11 @@
+Feature,Loss,Seed,Accuracy,Precision,Recall,F1,AUC,EER,Acc@1%FAR,Acc@5%FAR,Params,Latency_ms,Training_time_s
+LogMel,ProtoNet,42,,,,,,,,,,,
+LogMel,ProtoNet,43,,,,,,,,,,,
+LogMel,ProtoNet,44,,,,,,,,,,,
+LogMel,GE2E,42,,,,,,,,,,,
+LogMel,Triplet,42,,,,,,,,,,,
+PCEN,ProtoNet,42,,,,,,,,,,,
+PCEN,ProtoNet,43,,,,,,,,,,,
+PCEN,ProtoNet,44,,,,,,,,,,,
+PCEN,GE2E,42,,,,,,,,,,,
+PCEN,Triplet,42,,,,,,,,,,,

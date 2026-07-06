@@ -18,18 +18,37 @@ Validate the interaction between audio feature extraction and metric learning lo
 | RQ1 | How do Log-Mel vs PCEN affect FS-KWS accuracy? | PCEN improves accuracy at fixed FAR |
 | RQ2 | How do ProtoNet vs GE2E vs Triplet compare? | GE2E may outperform; no direct evidence |
 
+### Experimental Design
+
+ProtoNet is the primary metric-learning approach investigated in this study. Therefore, all ProtoNet experiments are repeated with three independent random seeds to enable statistical analysis. GE2E and Triplet are included as secondary baselines for qualitative comparison and are executed with a single seed to reduce computational cost. If a secondary method demonstrates promising performance, it will be promoted to a primary method and evaluated with three seeds in a follow-up experiment.
+
+**Promotion criteria for secondary methods:**
+
+| Secondary result vs ProtoNet | Action |
+|---|---|
+| Clearly worse (ΔAccuracy > 5% gap) | Not promoted |
+| Comparable (ΔAccuracy < 3% gap) | Run 2 additional seeds |
+| Clearly better (ΔAccuracy > 3% lead) | Promote to primary, evaluate fully |
+
 ### Design
 
-| Feature | Loss | Seeds |
-|---|---|---|
-| Log-Mel | ProtoNet | 42, 43, 44 |
-| Log-Mel | GE2E | 42 |
-| Log-Mel | Triplet | 42 |
-| Log-Mel+PCEN | ProtoNet | 42, 43, 44 |
-| Log-Mel+PCEN | GE2E | 42 |
-| Log-Mel+PCEN | Triplet | 42 |
+| Feature | Loss | Seeds | Role |
+|---|---|---|---|
+| Log-Mel | ProtoNet | 42, 43, 44 | Primary |
+| Log-Mel | GE2E | 42 | Secondary |
+| Log-Mel | Triplet | 42 | Secondary |
+| Log-Mel+PCEN | ProtoNet | 42, 43, 44 | Primary |
+| Log-Mel+PCEN | GE2E | 42 | Secondary |
+| Log-Mel+PCEN | Triplet | 42 | Secondary |
 
 **Total: 10 cells** (6 primary + 4 secondary)
+
+### Machine-readable results
+
+| File | Contents |
+|---|---|
+| `summary.csv` | All 10 cells: Feature, Loss, Seed, Accuracy, F1, EER, Acc@1%FAR, Acc@5%FAR, Params, Latency |
+| `ranking.csv` | Ranked configurations by composite score |
 
 ---
 
