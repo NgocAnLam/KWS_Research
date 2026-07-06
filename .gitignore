@@ -32,3 +32,4 @@ Thumbs.db
 # Thesis/Paper
 thesis/*.pdf
 paper/*.pdf
+.playwright-mcp/
