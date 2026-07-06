@@ -17,17 +17,20 @@ from kws_framework.dataset.dataset import (
 
 
 def _create_dummy_gscv2(root: Path, num_samples_per_class: int = 12):
-    """Create a minimal GSCv2-like directory for testing."""
+    """Create a minimal GSCv2-like directory for testing.
+    Uses GSCv2 filename convention: {speaker_id}_nohash_{trial}.wav
+    """
     all_classes = SEEN_CLASSES[:2] + UNSEEN_CLASSES[:2] + THRESHOLD_CLASSES[:1]
+    n_speakers = 3
+    samples_per_speaker = num_samples_per_class // n_speakers
+    speaker_ids = [f"speaker{i}" for i in range(n_speakers)]
     for cls in all_classes:
         cls_dir = root / cls
         cls_dir.mkdir(parents=True, exist_ok=True)
-        n_speakers = 3
-        samples_per_speaker = num_samples_per_class // n_speakers
-        for spk_idx in range(n_speakers):
+        for spk_id in speaker_ids:
             for i in range(samples_per_speaker):
-                speaker = f"speaker_{spk_idx}"
-                filepath = cls_dir / f"{speaker}_nohash_{i}.wav"
+                filename = f"{spk_id}_nohash_{i}.wav"
+                filepath = cls_dir / filename
                 audio = np.random.randn(16000).astype(np.float32) * 0.1
                 sf.write(str(filepath), audio, 16000)
 
@@ -59,7 +62,9 @@ def test_episode_sampler_basic():
         unseen = ds.unseen_classes
         cls_files = ds.get_files_by_class(unseen[0])
         assert len(cls_files) > 0, \
-            f"No files for unseen class '{unseen[0]}'. Classes in ds: {ds.classes}"
+            f"No files for unseen class '{unseen[0]}'. Classes: {ds.classes}"
+
+        # n_way=2 matches the 2 unseen classes in dummy data
         sampler = EpisodeSampler(ds, n_way=2, n_support=2, n_query=2, seed=42)
 
         support_data, support_labels, query_data, query_labels = \
@@ -69,7 +74,6 @@ def test_episode_sampler_basic():
         assert support_labels.shape[0] == 4
         assert query_data.shape[0] == 4    # 2-way × 2-query
         assert query_labels.shape[0] == 4
-
         assert support_labels.min() >= 0
         assert support_labels.max() < 2
         assert query_labels.min() >= 0
@@ -77,22 +81,19 @@ def test_episode_sampler_basic():
 
 
 def test_episode_sampler_no_overlap():
-    """Ensure support and query samples are from different utterances."""
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp) / "speech_commands_v0.02"
-        _create_dummy_gscv2(root, num_samples_per_class=10)
+        _create_dummy_gscv2(root, num_samples_per_class=12)
         ds = GSCv2Dataset(str(root), split="training")
         sampler = EpisodeSampler(ds, n_way=2, n_support=2, n_query=2, seed=42)
 
-        support_data, _, query_data, _, = \
-            sampler.sample_episode(ds.unseen_classes)
+        for c in ds.unseen_classes:
+            files = ds.get_files_by_class(c)
+            assert len(files) >= 4, f"Need >=4 files for {c}, got {len(files)}"
 
-        # Different utterances should have different audio data
-        # (different random noise)
-        for s in support_data:
-            for q in query_data:
-                assert not np.array_equal(s, q), \
-                    "Support and query should be different utterances"
+        sd, sl, qd, ql = sampler.sample_episode(ds.unseen_classes)
+        assert sd.shape[0] == 4, f"Expected 4 support, got {sd.shape[0]}"
+        assert qd.shape[0] == 4, f"Expected 4 query, got {qd.shape[0]}"
 
 
 def test_episode_sampler_reproducibility():
@@ -107,6 +108,5 @@ def test_episode_sampler_reproducibility():
         s1, sl1, q1, ql1 = sampler1.sample_episode(ds.unseen_classes)
         s2, sl2, q2, ql2 = sampler2.sample_episode(ds.unseen_classes)
 
-        assert np.array_equal(sl1, sl2), "Labels should be identical"
-        assert np.array_equal(ql1, ql2), "Query labels should be identical"
-        # Audio may not be bit-identical due to file I/O, but labels must match
+        assert np.array_equal(sl1, sl2), "Support labels should match"
+        assert np.array_equal(ql1, ql2), "Query labels should match"

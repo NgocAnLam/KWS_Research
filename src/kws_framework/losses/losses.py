@@ -140,42 +140,30 @@ class TripletLoss(BaseLoss):
 
     def forward(self, embeddings: torch.Tensor,
                 labels: torch.Tensor) -> torch.Tensor:
-        # Compute pairwise distances
         distances = torch.cdist(embeddings, embeddings, p=2)
 
-        # For each anchor, find hardest positive and semi-hard negative
-        loss = torch.tensor(0.0, device=embeddings.device)
-        n_triplets = 0
-
+        # Use a loss that always has a grad_fn: weighted sum over all valid triplets
+        loss_terms = []
         for i in range(len(embeddings)):
-            # Positive mask: same class, different sample
             pos_mask = (labels == labels[i]) & (torch.arange(
                 len(embeddings), device=embeddings.device) != i)
             if pos_mask.sum() == 0:
                 continue
-
-            # Negative mask: different class
             neg_mask = labels != labels[i]
-
             if neg_mask.sum() == 0:
                 continue
-
-            # Hardest positive distance
             pos_dist = distances[i, pos_mask].max()
-
-            # Semi-hard negative: find negative within [pos_dist, pos_dist + margin]
             neg_dists = distances[i, neg_mask]
             semi_hard = (neg_dists > pos_dist) & (neg_dists < pos_dist + self.margin)
-
             if semi_hard.sum() > 0:
                 neg_dist = neg_dists[semi_hard].min()
             else:
-                # Fall back to hardest negative
                 neg_dist = neg_dists.min()
-
             triplet_loss = pos_dist - neg_dist + self.margin
-            if triplet_loss > 0:
-                loss = loss + triplet_loss
-                n_triplets += 1
+            loss_terms.append(torch.nn.functional.relu(triplet_loss))
 
-        return loss / max(n_triplets, 1)
+        if loss_terms:
+            return torch.stack(loss_terms).mean()
+        else:
+            # Create a dummy loss that still flows gradients
+            return (embeddings * 0).sum()

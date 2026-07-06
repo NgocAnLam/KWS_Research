@@ -51,7 +51,8 @@ def test_backbone_forward_backward():
 def test_backbone_param_count():
     model = BCResNet32(embedding_dim=64)
     total = sum(p.numel() for p in model.parameters())
-    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    assert 80_000 < total < 150_000, \
-        f"Unexpected param count: {total} (expected ~110K)"
-    assert total == trainable, "All params should be trainable"
+    # BC-ResNet-32 with t=2.5 → ~111K
+    assert 90_000 < total < 130_000, \
+        f"Unexpected param count: {total} (expected ~111K)"
+    assert total == sum(p.numel() for p in model.parameters() if p.requires_grad), \
+        "All params should be trainable"

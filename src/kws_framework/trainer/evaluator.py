@@ -85,12 +85,16 @@ class Evaluator:
         # ROC-based metrics
         scores = np.array(pos_scores + neg_scores)
         labels = np.array([1] * len(pos_scores) + [0] * len(neg_scores))
+        fpr = np.array([0, 1])
+        tpr = np.array([0, 1])
+        auc = 0.0
+        eer = 0.5
         try:
             auc = roc_auc_score(labels, scores)
             fpr, tpr, thr = roc_curve(labels, scores)
             eer = float(brentq(lambda x: 1 - x - interp1d(fpr, tpr)(x), 0.0, 1.0))
         except Exception:
-            auc, eer = 0.0, 0.5
+            pass
 
         acc_1pct = float(tpr[np.argmin(np.abs(fpr - 0.01))]) if len(fpr) > 1 else 0.0
         acc_5pct = float(tpr[np.argmin(np.abs(fpr - 0.05))]) if len(fpr) > 1 else 0.0
