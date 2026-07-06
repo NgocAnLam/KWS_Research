@@ -265,6 +265,7 @@ def main(config: dict, smoke: bool = False):
     backbone = BCResNet32(
         input_channels=config.get("n_mels", 40),
         embedding_dim=config.get("embedding_dim", 64),
+        t=config.get("backbone_width", 2.5),
     )
     params = count_parameters(backbone)
     print(f"  Backbone params: {params['total_params']/1e3:.1f}K")

@@ -1,0 +1,39 @@
+# EXP001 Colab config — optimized for limited GPU runtime
+# Baseline: research-design-v2.0
+# Changes from exp001.yaml: fewer epochs, fewer episodes, smaller backbone
+
+experiment_name: "exp001"
+seed: 42
+data_root: "data/raw/speech_commands_v0.02"
+
+# Feature
+feature_type: "log_mel"  # overridden by run_grid.py
+n_mels: 40
+
+# Backbone (t=2.0 → 77.5K vs 117.8K, faster training)
+backbone: "bc_resnet_32"
+backbone_width: 2.0
+embedding_dim: 64
+
+# Loss (overridden by run_grid.py)
+loss: "prototypical"
+
+# Episode
+n_way: 5
+n_support: 5
+n_query: 5
+n_episodes_train: 300     # 1000 → 300
+n_episodes_eval: 200      # 600 → 200
+
+# Training
+epochs: 15                # 40 → 15
+learning_rate: 0.001
+weight_decay: 0.00004
+optimizer: "adam"
+scheduler: "cosine"
+
+# Audio
+sample_rate: 16000
+n_fft: 512
+hop_length: 160
+win_length: 400

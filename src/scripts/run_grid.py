@@ -26,7 +26,7 @@ LOSSES = ["prototypical", "ge2e", "triplet"]
 SEEDS = [42, 43, 44]
 PRIMARY_LOSSES = ["prototypical"]
 EXPERIMENT = "exp001"
-CONFIG = f"src/configs/{EXPERIMENT}.yaml"
+CONFIG = "src/configs/exp001.yaml"
 
 
 def config_dir(feature: str, loss: str, seed: int) -> str:
@@ -51,6 +51,8 @@ def main():
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--full", action="store_true")
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--config", type=str, default=CONFIG,
+                        help="Path to experiment config file")
     args = parser.parse_args()
 
     mode = "full"
@@ -59,7 +61,7 @@ def main():
     if args.dry_run:
         mode = "dry_run"
 
-    # dry-run always shows all cells; --full enables 3 seeds cell; --smoke still 1-seed mini
+    config = args.config
     cells = get_cells(full=(mode != "smoke"))
     total = len(cells)
 
@@ -94,7 +96,7 @@ def main():
 
         cmd = [
             sys.executable, "src/scripts/run_experiment.py",
-            "--config", CONFIG,
+            "--config", config,
             "--feature", feature, "--loss", loss, "--seed", str(seed),
         ]
         if args.smoke:
